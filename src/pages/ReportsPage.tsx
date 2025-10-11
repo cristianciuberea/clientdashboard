@@ -50,6 +50,7 @@ interface AggregatedMetrics {
   lastDayOrders?: number;
   firstDayDate?: string;
   lastDayDate?: string;
+  monthlyRevenue?: number;
   facebookAds?: {
     spend: number;
     impressions: number;
@@ -176,8 +177,21 @@ export default function ReportsPage() {
         let fbCpm = 0;
         let fbDataCount = 0;
 
+        // Calculate current month revenue
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        let monthlyRevenue = 0;
+
         for (const snapshot of uniqueSnapshots) {
           const snapshotMetrics = snapshot.metrics as any;
+
+          // Check if snapshot is from current month
+          const snapshotDate = new Date(snapshot.date);
+          if (snapshotDate.getMonth() === currentMonth && snapshotDate.getFullYear() === currentYear) {
+            if (snapshot.platform === 'woocommerce' || snapshot.platform === 'wordpress') {
+              monthlyRevenue = Math.max(monthlyRevenue, snapshotMetrics.totalRevenue || 0);
+            }
+          }
 
           if (snapshot.date === today) {
             todayMetric = snapshotMetrics;
@@ -319,6 +333,7 @@ export default function ReportsPage() {
           firstDayOrders: firstDayMetric?.totalOrders || 0,
           lastDayRevenue: lastDayMetric?.totalRevenue || 0,
           lastDayOrders: lastDayMetric?.totalOrders || 0,
+          monthlyRevenue,
           firstDayDate,
           lastDayDate,
           facebookAds,
@@ -514,7 +529,7 @@ export default function ReportsPage() {
               />
               <MetricCard
                 title="Monthly Revenue"
-                value={`${Math.round(metrics.totalRevenue / (dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90) * 30).toLocaleString()} RON`}
+                value={`${(metrics.monthlyRevenue || 0).toLocaleString()} RON`}
                 icon={TrendingUp}
                 iconBg="bg-orange-100"
                 iconColor="text-orange-600"
