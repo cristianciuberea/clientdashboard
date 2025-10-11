@@ -513,9 +513,9 @@ export default function ReportsPage() {
                 iconColor="text-purple-600"
               />
               <MetricCard
-                title="Products"
-                value={metrics.totalProducts}
-                icon={Package}
+                title="Monthly Revenue"
+                value={`${Math.round(metrics.totalRevenue / (dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90) * 30).toLocaleString()} RON`}
+                icon={TrendingUp}
                 iconBg="bg-orange-100"
                 iconColor="text-orange-600"
               />
