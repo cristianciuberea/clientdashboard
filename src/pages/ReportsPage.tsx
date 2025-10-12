@@ -312,17 +312,6 @@ export default function ReportsPage() {
           .sort((a, b) => b.revenue - a.revenue)
           .slice(0, 10);
 
-        const facebookAds = fbDataCount > 0 ? {
-          spend: fbSpend,
-          impressions: fbImpressions,
-          clicks: fbClicks,
-          conversions: fbConversions,
-          ctr: fbDataCount > 0 ? fbCtr / fbDataCount : 0,
-          cpc: fbDataCount > 0 ? fbCpc / fbDataCount : 0,
-          cpm: fbDataCount > 0 ? fbCpm / fbDataCount : 0,
-          roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
-        } : undefined;
-
         // For WooCommerce, calculate period totals and daily sales from cumulative data
         let calculatedYesterdayRevenue = 0;
         let calculatedYesterdayOrders = 0;
@@ -367,24 +356,23 @@ export default function ReportsPage() {
           }
         }
 
-        // Find snapshot for today
-        const todaySnapshot = wooSnapshots.find(s => s.date === today);
-        // Find snapshot for day before today
-        const dayBeforeTodaySnapshot = wooSnapshots.find(s => {
-          const date = new Date(s.date);
-          const todayDate = new Date(today);
-          const diff = Math.floor((todayDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-          return diff === 1;
-        });
+        // Find snapshots by date using sorted array
+        const todayIndex = uniqueDates.indexOf(today);
+        const yesterdayIndex = uniqueDates.indexOf(yesterday);
 
-        // Find snapshot for yesterday
-        const yesterdaySnapshot = wooSnapshots.find(s => s.date === yesterday);
-        // Find snapshot for day before yesterday
-        const dayBeforeYesterdaySnapshot = wooSnapshots.find(s => {
-          const date = new Date(s.date);
-          const yesterdayDate = new Date(yesterday);
-          const diff = Math.floor((yesterdayDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-          return diff === 1;
+        const todaySnapshot = todayIndex >= 0 ? wooSnapshots.find(s => s.date === uniqueDates[todayIndex]) : null;
+        const dayBeforeTodaySnapshot = todayIndex > 0 ? wooSnapshots.find(s => s.date === uniqueDates[todayIndex - 1]) : null;
+
+        const yesterdaySnapshot = yesterdayIndex >= 0 ? wooSnapshots.find(s => s.date === uniqueDates[yesterdayIndex]) : null;
+        const dayBeforeYesterdaySnapshot = yesterdayIndex > 0 ? wooSnapshots.find(s => s.date === uniqueDates[yesterdayIndex - 1]) : null;
+
+        console.log('Snapshot lookup:', {
+          todayIndex,
+          yesterdayIndex,
+          todayFound: !!todaySnapshot,
+          dayBeforeTodayFound: !!dayBeforeTodaySnapshot,
+          yesterdayFound: !!yesterdaySnapshot,
+          dayBeforeYesterdayFound: !!dayBeforeYesterdaySnapshot
         });
 
         // Calculate TODAY's sales (absolute difference)
@@ -429,6 +417,18 @@ export default function ReportsPage() {
           calculatedYesterdayRevenue,
           calculatedYesterdayOrders
         });
+
+        // Calculate Facebook Ads ROAS using aggregatedRevenue
+        const facebookAds = fbDataCount > 0 ? {
+          spend: fbSpend,
+          impressions: fbImpressions,
+          clicks: fbClicks,
+          conversions: fbConversions,
+          ctr: fbDataCount > 0 ? fbCtr / fbDataCount : 0,
+          cpc: fbDataCount > 0 ? fbCpc / fbDataCount : 0,
+          cpm: fbDataCount > 0 ? fbCpm / fbDataCount : 0,
+          roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
+        } : undefined;
 
         console.log('Aggregated metrics:', { aggregatedRevenue, aggregatedOrders, topProducts, facebookAds });
 
