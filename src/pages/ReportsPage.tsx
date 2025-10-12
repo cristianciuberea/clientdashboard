@@ -600,6 +600,84 @@ export default function ReportsPage() {
               </div>
             </div>
 
+            {metrics.facebookAds && (
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6 mb-8">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">Facebook Ads Performance</h2>
+                    <p className="text-sm text-blue-700">Campaign metrics for selected period</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">Ad Spend</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.spend.toFixed(2)} RON</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">Impressions</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.impressions.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">Clicks</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.clicks.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">Conversions</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.conversions}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">CTR</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.ctr.toFixed(2)}%</p>
+                    <p className="text-xs text-slate-500 mt-1">Click-through rate</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">CPC</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.cpc.toFixed(2)} RON</p>
+                    <p className="text-xs text-slate-500 mt-1">Cost per click</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">CPM</p>
+                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.cpm.toFixed(2)} RON</p>
+                    <p className="text-xs text-slate-500 mt-1">Cost per 1000 impressions</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-green-200 bg-green-50">
+                    <p className="text-xs text-slate-600 mb-1">ROAS</p>
+                    <p className="text-xl font-bold text-green-700">{metrics.facebookAds.roas.toFixed(2)}x</p>
+                    <p className="text-xs text-slate-500 mt-1">Return on ad spend</p>
+                  </div>
+                </div>
+
+                {metrics.facebookAds.roas > 0 && (
+                  <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">Campaign Efficiency</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          For every 1 RON spent, you earned {metrics.facebookAds.roas.toFixed(2)} RON
+                        </p>
+                      </div>
+                      <div className={`px-4 py-2 rounded-lg font-bold ${
+                        metrics.facebookAds.roas >= 3
+                          ? 'bg-green-100 text-green-700'
+                          : metrics.facebookAds.roas >= 2
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {metrics.facebookAds.roas >= 3 ? 'Excellent' : metrics.facebookAds.roas >= 2 ? 'Good' : 'Needs Improvement'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <div className="bg-white rounded-xl border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -713,84 +791,6 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-
-            {metrics.facebookAds && (
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6 mt-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-800">Facebook Ads Performance</h2>
-                    <p className="text-sm text-blue-700">Campaign metrics for selected period</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">Ad Spend</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.spend.toFixed(2)} RON</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">Impressions</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.impressions.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">Clicks</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.clicks.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">Conversions</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.conversions}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">CTR</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.ctr.toFixed(2)}%</p>
-                    <p className="text-xs text-slate-500 mt-1">Click-through rate</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">CPC</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.cpc.toFixed(2)} RON</p>
-                    <p className="text-xs text-slate-500 mt-1">Cost per click</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">CPM</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.cpm.toFixed(2)} RON</p>
-                    <p className="text-xs text-slate-500 mt-1">Cost per 1000 impressions</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-green-200 bg-green-50">
-                    <p className="text-xs text-slate-600 mb-1">ROAS</p>
-                    <p className="text-xl font-bold text-green-700">{metrics.facebookAds.roas.toFixed(2)}x</p>
-                    <p className="text-xs text-slate-500 mt-1">Return on ad spend</p>
-                  </div>
-                </div>
-
-                {metrics.facebookAds.roas > 0 && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">Campaign Efficiency</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          For every 1 RON spent, you earned {metrics.facebookAds.roas.toFixed(2)} RON
-                        </p>
-                      </div>
-                      <div className={`px-4 py-2 rounded-lg font-bold ${
-                        metrics.facebookAds.roas >= 3
-                          ? 'bg-green-100 text-green-700'
-                          : metrics.facebookAds.roas >= 2
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {metrics.facebookAds.roas >= 3 ? 'Excellent' : metrics.facebookAds.roas >= 2 ? 'Good' : 'Needs Improvement'}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </>
         ) : (
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
