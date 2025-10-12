@@ -505,7 +505,7 @@ export default function ReportsPage() {
 
         {metrics ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
               <MetricCard
                 title="Total Revenue"
                 value={`${metrics.totalRevenue.toLocaleString()} RON`}
@@ -536,8 +536,8 @@ export default function ReportsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-800">Yesterday</h3>
                   <Calendar className="w-5 h-5 text-slate-400" />
@@ -554,8 +554,8 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-bold text-slate-800">Today</h3>
                   <Calendar className="w-5 h-5 text-blue-500" />
                 </div>
@@ -601,8 +601,8 @@ export default function ReportsPage() {
             </div>
 
             {metrics.facebookAds && (
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-5 mb-6">
-                <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-4 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-white" />
                   </div>
@@ -678,9 +678,9 @@ export default function ReportsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-bold text-slate-800">First Day Top Products</h2>
                   <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
                     {metrics.firstDayDate ? new Date(metrics.firstDayDate).toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }) : 'N/A'}
@@ -747,8 +747,8 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h2 className="text-lg font-bold text-slate-800 mb-6">Top Products (Period Overview)</h2>
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <h2 className="text-lg font-bold text-slate-800 mb-4">Top Products (Period Overview)</h2>
                 <div className="space-y-4">
                   {metrics.topProducts.slice(0, 5).map((product, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
@@ -765,7 +765,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-slate-800">Performance Summary</h2>
                 <Calendar className="w-5 h-5 text-slate-400" />
