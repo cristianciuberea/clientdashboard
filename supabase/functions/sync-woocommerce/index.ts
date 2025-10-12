@@ -123,8 +123,11 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!allowedStatuses.includes(order.status)) {
+        console.log(`Skipping order ${order.id} with status: ${order.status}`);
         continue;
       }
+
+      console.log(`Processing order ${order.id} with status: ${order.status}`);
 
       totalRevenue += parseFloat(order.total || '0');
 
