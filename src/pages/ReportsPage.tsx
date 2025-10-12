@@ -700,6 +700,7 @@ export default function ReportsPage() {
   };
 
   const handleSyncAll = async () => {
+    alert('SYNC STARTED - Check console!');
     console.log('=== SYNC ALL STARTED ===');
     console.log('Selected client:', selectedClient);
     console.log('Integrations:', integrations);
