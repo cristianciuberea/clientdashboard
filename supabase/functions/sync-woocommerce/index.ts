@@ -34,6 +34,10 @@ Deno.serve(async (req: Request) => {
       throw new Error('Missing required parameters: integration_id, client_id');
     }
 
+    const isRangeQuery = date_from && date_to && date_from !== date_to;
+    const metricType = isRangeQuery ? 'ecommerce_aggregate' : 'ecommerce';
+    const snapshotDate = isRangeQuery ? date_from : (date_to || new Date().toISOString().split('T')[0]);
+
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integrations')
       .select('*')
@@ -57,16 +61,14 @@ Deno.serve(async (req: Request) => {
 
     const allowedStatuses = config?.order_statuses || ['processing', 'completed'];
 
-    const targetDate = date_to || new Date().toISOString().split('T')[0];
-
     const auth = btoa(`${consumerKey}:${consumerSecret}`);
     const headers = {
       'Authorization': `Basic ${auth}`,
       'Content-Type': 'application/json',
     };
 
-    const startDateTime = `${targetDate}T00:00:00`;
-    const endDateTime = `${targetDate}T23:59:59`;
+    const startDateTime = isRangeQuery ? `${date_from}T00:00:00` : `${snapshotDate}T00:00:00`;
+    const endDateTime = isRangeQuery ? `${date_to}T23:59:59` : `${snapshotDate}T23:59:59`;
 
     let allOrders: any[] = [];
     let page = 1;
@@ -159,8 +161,8 @@ Deno.serve(async (req: Request) => {
         client_id,
         integration_id,
         platform: 'woocommerce',
-        metric_type: 'ecommerce',
-        date: targetDate,
+        metric_type: metricType,
+        date: snapshotDate,
         metrics: metrics,
       });
 
