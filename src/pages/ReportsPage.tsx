@@ -125,27 +125,33 @@ export default function ReportsPage() {
       }
 
       if (data && data.length > 0) {
-        const latestByDate: Record<string, any> = {};
+        const latestByDatePlatform: Record<string, any> = {};
 
         for (const snapshot of data) {
-          const date = snapshot.date;
+          const key = `${snapshot.date}-${snapshot.platform}`;
           const snapshotMetrics = snapshot.metrics as any;
 
           // For WooCommerce/WordPress, take the snapshot with HIGHEST cumulative revenue for each date
           if (snapshot.platform === 'woocommerce' || snapshot.platform === 'wordpress') {
-            if (!latestByDate[date] ||
-                (snapshotMetrics.totalRevenue || 0) > ((latestByDate[date].metrics as any).totalRevenue || 0)) {
-              latestByDate[date] = snapshot;
+            if (!latestByDatePlatform[key] ||
+                (snapshotMetrics.totalRevenue || 0) > ((latestByDatePlatform[key].metrics as any).totalRevenue || 0)) {
+              latestByDatePlatform[key] = snapshot;
             }
           } else {
-            // For other platforms, take the most recent by created_at
-            if (!latestByDate[date] || new Date(snapshot.created_at) > new Date(latestByDate[date].created_at)) {
-              latestByDate[date] = snapshot;
+            // For other platforms (FB Ads, etc), take the snapshot with highest spend/metric value
+            const currentValue = snapshotMetrics.spend || snapshotMetrics.impressions || 0;
+            const existingValue = latestByDatePlatform[key] ?
+              ((latestByDatePlatform[key].metrics as any).spend || (latestByDatePlatform[key].metrics as any).impressions || 0) : 0;
+
+            if (!latestByDatePlatform[key] || currentValue > existingValue) {
+              latestByDatePlatform[key] = snapshot;
             }
           }
         }
 
-        const uniqueSnapshots = Object.values(latestByDate);
+        const uniqueSnapshots = Object.values(latestByDatePlatform);
+        console.log('Unique snapshots after deduplication:', uniqueSnapshots.length, 'by platform:',
+          uniqueSnapshots.reduce((acc, s) => { acc[s.platform] = (acc[s.platform] || 0) + 1; return acc; }, {} as Record<string, number>));
 
         let aggregatedRevenue = 0;
         let aggregatedOrders = 0;
