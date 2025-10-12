@@ -186,7 +186,6 @@ export default function ReportsPage() {
         }
 
         const uniqueSnapshots = Object.values(latestByDatePlatform);
-          uniqueSnapshots.reduce((acc, s) => { acc[s.platform] = (acc[s.platform] || 0) + 1; return acc; }, {} as Record<string, number>));
 
         let aggregatedRevenue = 0;
         let aggregatedOrders = 0;
