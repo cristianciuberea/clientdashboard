@@ -700,22 +700,7 @@ export default function ReportsPage() {
   };
 
   const handleSyncAll = async () => {
-    alert('SYNC STARTED - Check console!');
-    console.log('=== SYNC ALL STARTED ===');
-    console.log('Selected client:', selectedClient);
-    console.log('Integrations:', integrations);
-    console.log('Integrations count:', integrations.length);
-    console.log('Check result: selectedClient?', !!selectedClient, 'integrations.length?', integrations.length);
-
-    if (!selectedClient) {
-      alert('Please select a client first!');
-      console.error('Cannot sync: no client selected');
-      return;
-    }
-
-    if (integrations.length === 0) {
-      alert('No integrations found for this client!');
-      console.error('Cannot sync: no integrations');
+    if (!selectedClient || integrations.length === 0) {
       return;
     }
 
