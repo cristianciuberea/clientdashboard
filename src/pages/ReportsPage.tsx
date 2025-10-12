@@ -325,7 +325,7 @@ export default function ReportsPage() {
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
 
-        // For WooCommerce, calculate daily differences from cumulative data
+        // For WooCommerce, calculate daily sales from cumulative data
         let calculatedYesterdayRevenue = 0;
         let calculatedYesterdayOrders = 0;
         let calculatedTodayRevenue = 0;
@@ -333,56 +333,73 @@ export default function ReportsPage() {
 
         // Get unique dates from WooCommerce snapshots
         const uniqueDates = Array.from(new Set(wooSnapshots.map(s => s.date))).sort();
-        console.log('Unique WooCommerce dates:', uniqueDates);
+        console.log('=== WOOCOMMERCE DAILY CALCULATION ===');
+        console.log('Unique dates:', uniqueDates);
+        console.log('Today:', today);
+        console.log('Yesterday:', yesterday);
 
-        if (uniqueDates.length >= 2) {
-          const lastDate = uniqueDates[uniqueDates.length - 1];
-          const secondLastDate = uniqueDates[uniqueDates.length - 2];
+        // Find snapshot for today
+        const todaySnapshot = wooSnapshots.find(s => s.date === today);
+        // Find snapshot for day before today
+        const dayBeforeTodaySnapshot = wooSnapshots.find(s => {
+          const date = new Date(s.date);
+          const todayDate = new Date(today);
+          const diff = Math.floor((todayDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          return diff === 1;
+        });
 
-          const lastSnapshot = wooSnapshots.find(s => s.date === lastDate);
-          const secondLastSnapshot = wooSnapshots.find(s => s.date === secondLastDate);
+        // Find snapshot for yesterday
+        const yesterdaySnapshot = wooSnapshots.find(s => s.date === yesterday);
+        // Find snapshot for day before yesterday
+        const dayBeforeYesterdaySnapshot = wooSnapshots.find(s => {
+          const date = new Date(s.date);
+          const yesterdayDate = new Date(yesterday);
+          const diff = Math.floor((yesterdayDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          return diff === 1;
+        });
 
-          if (lastSnapshot && secondLastSnapshot) {
-            const lastMetrics = lastSnapshot.metrics as any;
-            const secondLastMetrics = secondLastSnapshot.metrics as any;
+        // Calculate TODAY's sales (difference between today and day before)
+        if (todaySnapshot && dayBeforeTodaySnapshot) {
+          const todayMetrics = todaySnapshot.metrics as any;
+          const dayBeforeMetrics = dayBeforeTodaySnapshot.metrics as any;
 
-            // Today's revenue/orders = difference between last and second-last
-            calculatedTodayRevenue = (lastMetrics.totalRevenue || 0) - (secondLastMetrics.totalRevenue || 0);
-            calculatedTodayOrders = (lastMetrics.totalOrders || 0) - (secondLastMetrics.totalOrders || 0);
+          calculatedTodayRevenue = (todayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0);
+          calculatedTodayOrders = (todayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0);
 
-            console.log('Today calculation:', {
-              lastDate,
-              lastRevenue: lastMetrics.totalRevenue,
-              secondLastDate,
-              secondLastRevenue: secondLastMetrics.totalRevenue,
-              calculatedTodayRevenue,
-              calculatedTodayOrders
-            });
-          }
-
-          if (uniqueDates.length >= 3) {
-            const thirdLastDate = uniqueDates[uniqueDates.length - 3];
-            const thirdLastSnapshot = wooSnapshots.find(s => s.date === thirdLastDate);
-
-            if (secondLastSnapshot && thirdLastSnapshot) {
-              const secondLastMetrics = secondLastSnapshot.metrics as any;
-              const thirdLastMetrics = thirdLastSnapshot.metrics as any;
-
-              // Yesterday's revenue/orders = difference between second-last and third-last
-              calculatedYesterdayRevenue = (secondLastMetrics.totalRevenue || 0) - (thirdLastMetrics.totalRevenue || 0);
-              calculatedYesterdayOrders = (secondLastMetrics.totalOrders || 0) - (thirdLastMetrics.totalOrders || 0);
-
-              console.log('Yesterday calculation:', {
-                secondLastDate,
-                secondLastRevenue: secondLastMetrics.totalRevenue,
-                thirdLastDate,
-                thirdLastRevenue: thirdLastMetrics.totalRevenue,
-                calculatedYesterdayRevenue,
-                calculatedYesterdayOrders
-              });
-            }
-          }
+          console.log('TODAY sales:', {
+            todayDate: today,
+            todayTotal: todayMetrics.totalRevenue,
+            dayBeforeDate: dayBeforeTodaySnapshot.date,
+            dayBeforeTotal: dayBeforeMetrics.totalRevenue,
+            todaySales: calculatedTodayRevenue,
+            todayOrders: calculatedTodayOrders
+          });
         }
+
+        // Calculate YESTERDAY's sales (difference between yesterday and day before)
+        if (yesterdaySnapshot && dayBeforeYesterdaySnapshot) {
+          const yesterdayMetrics = yesterdaySnapshot.metrics as any;
+          const dayBeforeMetrics = dayBeforeYesterdaySnapshot.metrics as any;
+
+          calculatedYesterdayRevenue = (yesterdayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0);
+          calculatedYesterdayOrders = (yesterdayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0);
+
+          console.log('YESTERDAY sales:', {
+            yesterdayDate: yesterday,
+            yesterdayTotal: yesterdayMetrics.totalRevenue,
+            dayBeforeDate: dayBeforeYesterdaySnapshot.date,
+            dayBeforeTotal: dayBeforeMetrics.totalRevenue,
+            yesterdaySales: calculatedYesterdayRevenue,
+            yesterdayOrders: calculatedYesterdayOrders
+          });
+        }
+
+        console.log('Final calculated values:', {
+          calculatedTodayRevenue,
+          calculatedTodayOrders,
+          calculatedYesterdayRevenue,
+          calculatedYesterdayOrders
+        });
 
         console.log('Aggregated metrics:', { aggregatedRevenue, aggregatedOrders, topProducts, facebookAds });
 
