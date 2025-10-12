@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Plus, Edit2, Trash2, Shield, UserCheck, X } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Shield, UserCheck, X, Key } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -44,6 +44,8 @@ export default function UserManagementPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithClients | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -341,6 +343,55 @@ export default function UserManagementPage() {
     setShowEditModal(true);
   };
 
+  const handleOpenResetPassword = (user: UserWithClients) => {
+    setSelectedUser(user);
+    setNewPassword('');
+    setShowResetPasswordModal(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser) return;
+
+    try {
+      if (!newPassword || newPassword.length < 6) {
+        alert('Password must be at least 6 characters');
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-user-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: selectedUser.id,
+            new_password: newPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to reset password');
+      }
+
+      alert('Password reset successfully!');
+      setShowResetPasswordModal(false);
+      setSelectedUser(null);
+      setNewPassword('');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      alert(`Failed to reset password: ${error.message}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -447,6 +498,13 @@ export default function UserManagementPage() {
                         title="Edit User"
                       >
                         <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenResetPassword(user)}
+                        className="p-2 hover:bg-yellow-50 text-yellow-600 rounded-lg transition"
+                        title="Reset Password"
+                      >
+                        <Key className="w-4 h-4" />
                       </button>
                       {user.role !== 'super_admin' && (
                         <button
@@ -737,6 +795,66 @@ export default function UserManagementPage() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
                 >
                   Save Assignments
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reset Password Modal */}
+        {showResetPasswordModal && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Key className="w-6 h-6 text-yellow-600" />
+                  <h2 className="text-xl font-bold text-slate-800">Reset Password</h2>
+                </div>
+                <button
+                  onClick={() => setShowResetPasswordModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    <span className="font-semibold">User:</span> {selectedUser.full_name} ({selectedUser.email})
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    New Password *
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                    placeholder="Minimum 6 characters"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    The user will be able to login with this new password immediately.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={() => setShowResetPasswordModal(false)}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResetPassword}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition font-medium"
+                >
+                  Reset Password
                 </button>
               </div>
             </div>
