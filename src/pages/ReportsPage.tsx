@@ -129,8 +129,19 @@ export default function ReportsPage() {
 
         for (const snapshot of data) {
           const date = snapshot.date;
-          if (!latestByDate[date] || new Date(snapshot.created_at) > new Date(latestByDate[date].created_at)) {
-            latestByDate[date] = snapshot;
+          const snapshotMetrics = snapshot.metrics as any;
+
+          // For WooCommerce/WordPress, take the snapshot with HIGHEST cumulative revenue for each date
+          if (snapshot.platform === 'woocommerce' || snapshot.platform === 'wordpress') {
+            if (!latestByDate[date] ||
+                (snapshotMetrics.totalRevenue || 0) > ((latestByDate[date].metrics as any).totalRevenue || 0)) {
+              latestByDate[date] = snapshot;
+            }
+          } else {
+            // For other platforms, take the most recent by created_at
+            if (!latestByDate[date] || new Date(snapshot.created_at) > new Date(latestByDate[date].created_at)) {
+              latestByDate[date] = snapshot;
+            }
           }
         }
 
@@ -568,41 +579,29 @@ export default function ReportsPage() {
 
         {metrics ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-              <MetricCard
-                title="Total Revenue"
-                value={`${metrics.totalRevenue.toLocaleString()} RON`}
-                icon={DollarSign}
-                iconBg="bg-green-100"
-                iconColor="text-green-600"
-              />
-              <MetricCard
-                title="Total Orders"
-                value={metrics.totalOrders}
-                icon={ShoppingCart}
-                iconBg="bg-blue-100"
-                iconColor="text-blue-600"
-              />
-              <MetricCard
-                title="Average Order"
-                value={`${Math.round(metrics.averageOrderValue)} RON`}
-                icon={TrendingUp}
-                iconBg="bg-purple-100"
-                iconColor="text-purple-600"
-              />
-              <MetricCard
-                title="Monthly Revenue"
-                value={`${(metrics.monthlyRevenue || 0).toLocaleString()} RON`}
-                icon={TrendingUp}
-                iconBg="bg-orange-100"
-                iconColor="text-orange-600"
-              />
-            </div>
-
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 p-3 mb-3">
               <div className="mb-2">
                 <h2 className="text-base font-bold text-slate-800">WooCommerce Sales</h2>
-                <p className="text-xs text-slate-600">Daily revenue comparison</p>
+                <p className="text-xs text-slate-600">Complete store metrics</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                <div className="bg-white rounded-lg border border-slate-200 p-2">
+                  <p className="text-xs text-slate-600 mb-1">Total Revenue</p>
+                  <p className="text-lg font-bold text-slate-800">{metrics.totalRevenue.toLocaleString()} RON</p>
+                </div>
+                <div className="bg-white rounded-lg border border-slate-200 p-2">
+                  <p className="text-xs text-slate-600 mb-1">Total Orders</p>
+                  <p className="text-lg font-bold text-slate-800">{metrics.totalOrders}</p>
+                </div>
+                <div className="bg-white rounded-lg border border-slate-200 p-2">
+                  <p className="text-xs text-slate-600 mb-1">Average Order</p>
+                  <p className="text-lg font-bold text-slate-800">{Math.round(metrics.averageOrderValue)} RON</p>
+                </div>
+                <div className="bg-white rounded-lg border border-slate-200 p-2">
+                  <p className="text-xs text-slate-600 mb-1">Monthly Revenue</p>
+                  <p className="text-lg font-bold text-slate-800">{(metrics.monthlyRevenue || 0).toLocaleString()} RON</p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
