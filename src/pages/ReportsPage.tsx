@@ -181,6 +181,7 @@ export default function ReportsPage() {
           console.log('lastDayDate:', lastDayDate);
           console.log('Total unique snapshots:', sortedSnapshots.length);
           console.log('WooCommerce snapshots:', wooSnapshots.length);
+          console.log('Facebook Ads snapshots:', sortedSnapshots.filter(s => s.platform === 'facebook_ads').length);
         }
 
         const fbDailyData: { [date: string]: any } = {};
@@ -227,6 +228,7 @@ export default function ReportsPage() {
                 cpc: snapshotMetrics.cpc || 0,
                 cpm: snapshotMetrics.cpm || 0
               };
+              console.log('Found FB data for', snapshot.date, fbDailyData[snapshot.date]);
             }
           } else {
             // For WooCommerce/WordPress, store last day snapshot data
