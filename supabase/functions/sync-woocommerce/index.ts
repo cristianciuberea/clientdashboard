@@ -81,6 +81,7 @@ Deno.serve(async (req: Request) => {
 
     const orders: WooCommerceOrder[] = await ordersResponse.json();
     console.log(`Found ${orders.length} orders for ${snapshotDate}`);
+    console.log('Sample order dates:', orders.slice(0, 3).map(o => ({ id: o.id, date_created: o.date_created })));
 
     let totalRevenue = 0;
     let completedOrders = 0;
@@ -96,6 +97,11 @@ Deno.serve(async (req: Request) => {
     const allowedStatuses = ['completed', 'processing'];
 
     for (const order of orders) {
+      const orderDate = new Date(order.date_created);
+      const orderDateStr = orderDate.toISOString().split('T')[0];
+
+      console.log(`Order ${order.id}: created=${order.date_created}, date=${orderDateStr}, status=${order.status}`);
+
       switch (order.status) {
         case 'completed':
           completedOrders++;
