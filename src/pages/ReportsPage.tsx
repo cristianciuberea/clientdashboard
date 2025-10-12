@@ -346,15 +346,21 @@ export default function ReportsPage() {
             const firstMetrics = firstPeriodSnapshot.metrics as any;
             const lastMetrics = lastPeriodSnapshot.metrics as any;
 
-            // Period revenue = last cumulative - first cumulative
-            aggregatedRevenue = (lastMetrics.totalRevenue || 0) - (firstMetrics.totalRevenue || 0);
-            aggregatedOrders = (lastMetrics.totalOrders || 0) - (firstMetrics.totalOrders || 0);
+            // Since WooCommerce data might decrease (orders deleted), use absolute difference
+            // Take the higher value minus the lower value
+            const firstRevenue = firstMetrics.totalRevenue || 0;
+            const lastRevenue = lastMetrics.totalRevenue || 0;
+            const firstOrders = firstMetrics.totalOrders || 0;
+            const lastOrders = lastMetrics.totalOrders || 0;
+
+            aggregatedRevenue = Math.abs(lastRevenue - firstRevenue);
+            aggregatedOrders = Math.abs(lastOrders - firstOrders);
 
             console.log('PERIOD TOTALS:', {
               firstDate: uniqueDates[0],
-              firstRevenue: firstMetrics.totalRevenue,
+              firstRevenue,
               lastDate: uniqueDates[uniqueDates.length - 1],
-              lastRevenue: lastMetrics.totalRevenue,
+              lastRevenue,
               periodRevenue: aggregatedRevenue,
               periodOrders: aggregatedOrders
             });
@@ -381,13 +387,13 @@ export default function ReportsPage() {
           return diff === 1;
         });
 
-        // Calculate TODAY's sales (difference between today and day before)
+        // Calculate TODAY's sales (absolute difference)
         if (todaySnapshot && dayBeforeTodaySnapshot) {
           const todayMetrics = todaySnapshot.metrics as any;
           const dayBeforeMetrics = dayBeforeTodaySnapshot.metrics as any;
 
-          calculatedTodayRevenue = (todayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0);
-          calculatedTodayOrders = (todayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0);
+          calculatedTodayRevenue = Math.abs((todayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0));
+          calculatedTodayOrders = Math.abs((todayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0));
 
           console.log('TODAY sales:', {
             todayDate: today,
@@ -399,13 +405,13 @@ export default function ReportsPage() {
           });
         }
 
-        // Calculate YESTERDAY's sales (difference between yesterday and day before)
+        // Calculate YESTERDAY's sales (absolute difference)
         if (yesterdaySnapshot && dayBeforeYesterdaySnapshot) {
           const yesterdayMetrics = yesterdaySnapshot.metrics as any;
           const dayBeforeMetrics = dayBeforeYesterdaySnapshot.metrics as any;
 
-          calculatedYesterdayRevenue = (yesterdayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0);
-          calculatedYesterdayOrders = (yesterdayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0);
+          calculatedYesterdayRevenue = Math.abs((yesterdayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0));
+          calculatedYesterdayOrders = Math.abs((yesterdayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0));
 
           console.log('YESTERDAY sales:', {
             yesterdayDate: yesterday,
