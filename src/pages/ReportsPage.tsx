@@ -407,11 +407,6 @@ export default function ReportsPage() {
 
               if (aggregateSnapshot) {
                 const aggMetrics = (aggregateSnapshot as any).metrics as any;
-                  expectedDate: expectedAggregateDate,
-                  snapshotDate: (aggregateSnapshot as any).date,
-                  totalOrders: aggMetrics?.totalOrders,
-                  totalRevenue: aggMetrics?.totalRevenue,
-                });
 
                 aggregatedOrders = aggMetrics?.totalOrders || 0;
                 aggregatedRevenue = aggMetrics?.totalRevenue || 0;
