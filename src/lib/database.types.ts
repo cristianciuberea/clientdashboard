@@ -44,7 +44,7 @@ export interface Database {
           organization_id: string | null
           email: string
           full_name: string
-          role: 'super_admin' | 'client_admin' | 'client_viewer'
+          role: 'super_admin' | 'manager' | 'specialist' | 'client'
           avatar_url: string | null
           preferences: Json
           created_at: string
@@ -55,7 +55,7 @@ export interface Database {
           organization_id?: string | null
           email: string
           full_name: string
-          role?: 'super_admin' | 'client_admin' | 'client_viewer'
+          role?: 'super_admin' | 'manager' | 'specialist' | 'client'
           avatar_url?: string | null
           preferences?: Json
           created_at?: string
@@ -66,7 +66,7 @@ export interface Database {
           organization_id?: string | null
           email?: string
           full_name?: string
-          role?: 'super_admin' | 'client_admin' | 'client_viewer'
+          role?: 'super_admin' | 'manager' | 'specialist' | 'client'
           avatar_url?: string | null
           preferences?: Json
           created_at?: string
@@ -119,21 +119,21 @@ export interface Database {
           id: string
           client_id: string
           user_id: string
-          role: 'admin' | 'viewer'
+          role: 'manager' | 'specialist' | 'client'
           created_at: string
         }
         Insert: {
           id?: string
           client_id: string
           user_id: string
-          role?: 'admin' | 'viewer'
+          role?: 'manager' | 'specialist' | 'client'
           created_at?: string
         }
         Update: {
           id?: string
           client_id?: string
           user_id?: string
-          role?: 'admin' | 'viewer'
+          role?: 'manager' | 'specialist' | 'client'
           created_at?: string
         }
       }

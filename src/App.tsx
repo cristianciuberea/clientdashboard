@@ -7,6 +7,7 @@ import IntegrationsPage from './pages/IntegrationsPage';
 import ReportsPage from './pages/ReportsPage';
 import AlertsPage from './pages/AlertsPage';
 import SharedReportPage from './pages/SharedReportPage';
+import UserManagementPage from './pages/UserManagementPage';
 import Sidebar from './components/Sidebar';
 
 function AppContent() {
@@ -85,6 +86,8 @@ function AppContent() {
         return <ReportsPage />;
       case 'alerts':
         return <AlertsPage />;
+      case 'users':
+        return isSuperAdmin ? <UserManagementPage /> : <ClientDashboard />;
       case 'settings':
         return <IntegrationsPage />;
       default:
