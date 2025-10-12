@@ -740,26 +740,33 @@ export default function ReportsPage() {
           const platformSlug = integration.platform.replace('_', '-');
           const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platformSlug}`;
 
+          const payload = {
+            integration_id: integration.id,
+            client_id: integration.client_id,
+            date_to: period.dateTo,
+            ...(period.dateFrom && { date_from: period.dateFrom }),
+          };
+
+          console.log(`[${period.range}] Sending request:`, payload);
+
           const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              integration_id: integration.id,
-              client_id: integration.client_id,
-              date_to: period.dateTo,
-              ...(period.dateFrom && { date_from: period.dateFrom }),
-            }),
+            body: JSON.stringify(payload),
           });
 
           if (!response.ok) {
             const result = await response.json();
+            console.error(`[${period.range}] Sync failed:`, result);
             throw new Error(`${integration.platform} ${period.range}: ${result.error || 'Sync failed'}`);
           }
 
-          return response.json();
+          const result = await response.json();
+          console.log(`[${period.range}] Sync success:`, result);
+          return result;
         })
       );
 
