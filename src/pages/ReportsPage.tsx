@@ -598,7 +598,13 @@ export default function ReportsPage() {
         let fbConversions = 0;
         let fbDataCount = 0;
 
-        for (const dayData of Object.values(fbDailyData)) {
+        // For 'today' filter, only use today's FB data, not yesterday's
+        const fbDatesToInclude = dateRange === 'today' 
+          ? Object.entries(fbDailyData).filter(([date]) => date === todayStr)
+          : Object.entries(fbDailyData);
+
+        for (const [date, dayData] of fbDatesToInclude) {
+          console.log(`Including FB data for ${date}:`, dayData);
           fbSpend += dayData.spend;
           fbImpressions += dayData.impressions;
           fbClicks += dayData.clicks;
