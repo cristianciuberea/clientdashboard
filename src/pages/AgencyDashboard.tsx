@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2 } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2, AlertTriangle, X } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import type { Database } from '../lib/database.types';
 
@@ -21,6 +21,8 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddClient, setShowAddClient] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   useEffect(() => {
     fetchClients();
@@ -42,12 +44,23 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
     }
   };
 
-  const handleDeleteClient = async (clientId: string, clientName: string) => {
-    if (!confirm(`Are you sure you want to delete "${clientName}"?\n\nThis will permanently delete:\n- All integrations\n- All metrics data\n- All alerts\n- All user assignments\n\nThis action cannot be undone.`)) {
+  const handleDeleteClient = (client: Client) => {
+    setClientToDelete(client);
+    setDeleteConfirmation('');
+  };
+
+  const confirmDeleteClient = async () => {
+    if (!clientToDelete) return;
+
+    if (deleteConfirmation !== clientToDelete.name) {
+      alert('Client name does not match. Please type the exact name to confirm deletion.');
       return;
     }
 
     try {
+      const clientId = clientToDelete.id;
+      const clientName = clientToDelete.name;
+
       // Delete in order: child records first, then parent
 
       // 1. Delete metrics snapshots
@@ -107,6 +120,8 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
       if (clientError) throw clientError;
 
       alert(`Client "${clientName}" deleted successfully!`);
+      setClientToDelete(null);
+      setDeleteConfirmation('');
       fetchClients(); // Refresh list
     } catch (error: any) {
       console.error('Error deleting client:', error);
@@ -288,7 +303,7 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteClient(client.id, client.name);
+                            handleDeleteClient(client);
                           }}
                           className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition inline-flex items-center justify-center"
                           title="Delete Client"
@@ -307,6 +322,70 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
 
       {showAddClient && (
         <AddClientModal onClose={() => setShowAddClient(false)} onSuccess={fetchClients} />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {clientToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Delete Client</h2>
+                <p className="text-sm text-slate-600">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800 font-medium mb-2">
+                You are about to permanently delete:
+              </p>
+              <p className="text-lg font-bold text-red-900 mb-3">{clientToDelete.name}</p>
+              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                <li>All integrations (Facebook Ads, WooCommerce, etc.)</li>
+                <li>All metrics and historical data</li>
+                <li>All alerts and notifications</li>
+                <li>All reports and shared links</li>
+                <li>All user assignments</li>
+              </ul>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Type <span className="font-bold text-red-600">{clientToDelete.name}</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter client name"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setClientToDelete(null);
+                  setDeleteConfirmation('');
+                }}
+                className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteClient}
+                disabled={deleteConfirmation !== clientToDelete.name}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium disabled:bg-slate-300 disabled:cursor-not-allowed"
+              >
+                Delete Client
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
