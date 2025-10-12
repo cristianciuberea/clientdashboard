@@ -108,16 +108,42 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const latestMetric = data[0].metrics as any;
+        let totalRevenue = 0;
+        let totalConversions = 0;
+        let totalOrders = 0;
+        let websiteVisitors = 0;
+        let emailSubscribers = 0;
+        let adSpend = 0;
+        let adClicks = 0;
+        let adImpressions = 0;
+
+        for (const snapshot of data) {
+          const metrics = snapshot.metrics as any;
+
+          if (snapshot.platform === 'woocommerce') {
+            totalRevenue += metrics.totalRevenue || 0;
+            totalConversions += metrics.completedOrders || 0;
+            totalOrders += metrics.totalOrders || 0;
+          } else if (snapshot.platform === 'facebook_ads') {
+            adSpend += metrics.spend || 0;
+            adClicks += metrics.clicks || 0;
+            adImpressions += metrics.impressions || 0;
+          } else if (snapshot.platform === 'google_analytics') {
+            websiteVisitors += metrics.users || 0;
+          } else if (snapshot.platform === 'mailerlite') {
+            emailSubscribers = Math.max(emailSubscribers, metrics.activeSubscribers || 0);
+          }
+        }
+
         setRealMetrics({
-          totalRevenue: latestMetric.totalRevenue || 0,
-          totalConversions: latestMetric.completedOrders || 0,
-          websiteVisitors: 0,
-          emailSubscribers: 0,
-          adSpend: 0,
-          adClicks: 0,
-          adImpressions: 0,
-          orderCount: latestMetric.totalOrders || 0,
+          totalRevenue,
+          totalConversions,
+          websiteVisitors,
+          emailSubscribers,
+          adSpend,
+          adClicks,
+          adImpressions,
+          orderCount: totalOrders,
         });
       }
     } catch (error) {
