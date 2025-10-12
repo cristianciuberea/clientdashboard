@@ -183,14 +183,7 @@ export default function ReportsPage() {
           console.log('WooCommerce snapshots:', wooSnapshots.length);
         }
 
-        let fbSpend = 0;
-        let fbImpressions = 0;
-        let fbClicks = 0;
-        let fbConversions = 0;
-        let fbCtr = 0;
-        let fbCpc = 0;
-        let fbCpm = 0;
-        let fbDataCount = 0;
+        const fbDailyData: { [date: string]: any } = {};
 
         // Calculate current month revenue
         const currentMonth = new Date().getMonth();
@@ -222,14 +215,19 @@ export default function ReportsPage() {
           }
 
           if (snapshot.platform === 'facebook_ads') {
-            fbSpend += snapshotMetrics.spend || 0;
-            fbImpressions += snapshotMetrics.impressions || 0;
-            fbClicks += snapshotMetrics.clicks || 0;
-            fbConversions += snapshotMetrics.conversions || 0;
-            fbCtr += snapshotMetrics.ctr || 0;
-            fbCpc += snapshotMetrics.cpc || 0;
-            fbCpm += snapshotMetrics.cpm || 0;
-            fbDataCount++;
+            const currentSpend = snapshotMetrics.spend || 0;
+
+            if (!fbDailyData[snapshot.date] || currentSpend > fbDailyData[snapshot.date].spend) {
+              fbDailyData[snapshot.date] = {
+                spend: currentSpend,
+                impressions: snapshotMetrics.impressions || 0,
+                clicks: snapshotMetrics.clicks || 0,
+                conversions: snapshotMetrics.conversions || 0,
+                ctr: snapshotMetrics.ctr || 0,
+                cpc: snapshotMetrics.cpc || 0,
+                cpm: snapshotMetrics.cpm || 0
+              };
+            }
           } else {
             // For WooCommerce/WordPress, store last day snapshot data
             if (snapshot.date === lastDayDate) {
@@ -386,17 +384,36 @@ export default function ReportsPage() {
           calculatedYesterdayOrders
         });
 
-        // Calculate Facebook Ads ROAS using aggregatedRevenue
+        // Calculate Facebook Ads totals from daily data
+        let fbSpend = 0;
+        let fbImpressions = 0;
+        let fbClicks = 0;
+        let fbConversions = 0;
+        let fbDataCount = 0;
+
+        for (const dayData of Object.values(fbDailyData)) {
+          fbSpend += dayData.spend;
+          fbImpressions += dayData.impressions;
+          fbClicks += dayData.clicks;
+          fbConversions += dayData.conversions;
+          fbDataCount++;
+        }
+
         const facebookAds = fbDataCount > 0 ? {
           spend: fbSpend,
           impressions: fbImpressions,
           clicks: fbClicks,
           conversions: fbConversions,
-          ctr: fbDataCount > 0 ? fbCtr / fbDataCount : 0,
-          cpc: fbDataCount > 0 ? fbCpc / fbDataCount : 0,
-          cpm: fbDataCount > 0 ? fbCpm / fbDataCount : 0,
+          ctr: fbClicks > 0 && fbImpressions > 0 ? (fbClicks / fbImpressions) * 100 : 0,
+          cpc: fbClicks > 0 ? fbSpend / fbClicks : 0,
+          cpm: fbImpressions > 0 ? (fbSpend / fbImpressions) * 1000 : 0,
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
+
+        console.log('Facebook Ads (from daily data):', {
+          fbDailyData,
+          totals: facebookAds
+        });
 
         console.log('Aggregated metrics:', { aggregatedRevenue, aggregatedOrders, topProducts, facebookAds });
 
