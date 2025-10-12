@@ -231,11 +231,9 @@ export default function ReportsPage() {
             fbCpm += snapshotMetrics.cpm || 0;
             fbDataCount++;
           } else {
-            // For WooCommerce/WordPress, use the latest snapshot for current state
+            // For WooCommerce/WordPress, store last day snapshot data
             if (snapshot.date === lastDayDate) {
               console.log('Using lastDayDate snapshot:', snapshot.date, snapshotMetrics);
-              aggregatedRevenue = snapshotMetrics.totalRevenue || 0;
-              aggregatedOrders = snapshotMetrics.totalOrders || 0;
               completedOrders = snapshotMetrics.completedOrders || 0;
               processingOrders = snapshotMetrics.processingOrders || 0;
               pendingOrders = snapshotMetrics.pendingOrders || 0;
@@ -251,45 +249,45 @@ export default function ReportsPage() {
                 productMap[product.name].revenue += product.revenue || 0;
               }
             }
+          }
 
-            if (snapshot.date === today && snapshotMetrics.topProducts) {
-              for (const product of snapshotMetrics.topProducts) {
-                if (!todayProductMap[product.name]) {
-                  todayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
-                }
-                todayProductMap[product.name].quantity += product.quantity || 0;
-                todayProductMap[product.name].revenue += product.revenue || 0;
+          if (snapshot.date === today && snapshotMetrics.topProducts) {
+            for (const product of snapshotMetrics.topProducts) {
+              if (!todayProductMap[product.name]) {
+                todayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
               }
+              todayProductMap[product.name].quantity += product.quantity || 0;
+              todayProductMap[product.name].revenue += product.revenue || 0;
             }
+          }
 
-            if (snapshot.date === yesterday && snapshotMetrics.topProducts) {
-              for (const product of snapshotMetrics.topProducts) {
-                if (!yesterdayProductMap[product.name]) {
-                  yesterdayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
-                }
-                yesterdayProductMap[product.name].quantity += product.quantity || 0;
-                yesterdayProductMap[product.name].revenue += product.revenue || 0;
+          if (snapshot.date === yesterday && snapshotMetrics.topProducts) {
+            for (const product of snapshotMetrics.topProducts) {
+              if (!yesterdayProductMap[product.name]) {
+                yesterdayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
               }
+              yesterdayProductMap[product.name].quantity += product.quantity || 0;
+              yesterdayProductMap[product.name].revenue += product.revenue || 0;
             }
+          }
 
-            if (snapshot.date === firstDayDate && snapshotMetrics.topProducts) {
-              for (const product of snapshotMetrics.topProducts) {
-                if (!firstDayProductMap[product.name]) {
-                  firstDayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
-                }
-                firstDayProductMap[product.name].quantity += product.quantity || 0;
-                firstDayProductMap[product.name].revenue += product.revenue || 0;
+          if (snapshot.date === firstDayDate && snapshotMetrics.topProducts) {
+            for (const product of snapshotMetrics.topProducts) {
+              if (!firstDayProductMap[product.name]) {
+                firstDayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
               }
+              firstDayProductMap[product.name].quantity += product.quantity || 0;
+              firstDayProductMap[product.name].revenue += product.revenue || 0;
             }
+          }
 
-            if (snapshot.date === lastDayDate && snapshotMetrics.topProducts) {
-              for (const product of snapshotMetrics.topProducts) {
-                if (!lastDayProductMap[product.name]) {
-                  lastDayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
-                }
-                lastDayProductMap[product.name].quantity += product.quantity || 0;
-                lastDayProductMap[product.name].revenue += product.revenue || 0;
+          if (snapshot.date === lastDayDate && snapshotMetrics.topProducts) {
+            for (const product of snapshotMetrics.topProducts) {
+              if (!lastDayProductMap[product.name]) {
+                lastDayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
               }
+              lastDayProductMap[product.name].quantity += product.quantity || 0;
+              lastDayProductMap[product.name].revenue += product.revenue || 0;
             }
           }
         }
@@ -325,7 +323,7 @@ export default function ReportsPage() {
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
 
-        // For WooCommerce, calculate daily sales from cumulative data
+        // For WooCommerce, calculate period totals and daily sales from cumulative data
         let calculatedYesterdayRevenue = 0;
         let calculatedYesterdayOrders = 0;
         let calculatedTodayRevenue = 0;
@@ -333,10 +331,35 @@ export default function ReportsPage() {
 
         // Get unique dates from WooCommerce snapshots
         const uniqueDates = Array.from(new Set(wooSnapshots.map(s => s.date))).sort();
-        console.log('=== WOOCOMMERCE DAILY CALCULATION ===');
+        console.log('=== WOOCOMMERCE PERIOD CALCULATION ===');
         console.log('Unique dates:', uniqueDates);
+        console.log('Date range:', dateRange);
         console.log('Today:', today);
         console.log('Yesterday:', yesterday);
+
+        // Calculate period totals (difference between last and first snapshot in selected period)
+        if (wooSnapshots.length > 0) {
+          const firstPeriodSnapshot = wooSnapshots.find(s => s.date === uniqueDates[0]);
+          const lastPeriodSnapshot = wooSnapshots.find(s => s.date === uniqueDates[uniqueDates.length - 1]);
+
+          if (firstPeriodSnapshot && lastPeriodSnapshot) {
+            const firstMetrics = firstPeriodSnapshot.metrics as any;
+            const lastMetrics = lastPeriodSnapshot.metrics as any;
+
+            // Period revenue = last cumulative - first cumulative
+            aggregatedRevenue = (lastMetrics.totalRevenue || 0) - (firstMetrics.totalRevenue || 0);
+            aggregatedOrders = (lastMetrics.totalOrders || 0) - (firstMetrics.totalOrders || 0);
+
+            console.log('PERIOD TOTALS:', {
+              firstDate: uniqueDates[0],
+              firstRevenue: firstMetrics.totalRevenue,
+              lastDate: uniqueDates[uniqueDates.length - 1],
+              lastRevenue: lastMetrics.totalRevenue,
+              periodRevenue: aggregatedRevenue,
+              periodOrders: aggregatedOrders
+            });
+          }
+        }
 
         // Find snapshot for today
         const todaySnapshot = wooSnapshots.find(s => s.date === today);
