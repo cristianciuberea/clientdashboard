@@ -105,6 +105,10 @@ export default function ReportsPage() {
       // String versions for comparison with snapshot.date (use local timezone, not UTC)
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+      
+      console.log('=== DATE STRINGS FOR COMPARISON ===');
+      console.log('todayStr:', todayStr);
+      console.log('yesterdayStr:', yesterdayStr);
 
       let startDate: Date;
       let endDate: Date = new Date();
@@ -561,7 +565,10 @@ export default function ReportsPage() {
         }
 
         // Get YESTERDAY's sales by summing ALL snapshots for yesterday
+        console.log('Looking for yesterday snapshots with date:', yesterdayStr);
+        console.log('Available WooCommerce snapshot dates:', wooSnapshots.map(s => s.date));
         const yesterdaySnapshots = wooSnapshots.filter(s => s.date === yesterdayStr);
+        console.log('Found yesterday snapshots:', yesterdaySnapshots.length);
         if (yesterdaySnapshots.length > 0) {
           yesterdaySnapshots.forEach(snapshot => {
             const metrics = snapshot.metrics as any;
