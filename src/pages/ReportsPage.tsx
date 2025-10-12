@@ -125,6 +125,7 @@ export default function ReportsPage() {
           break;
         case 'this_month':
           startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
           break;
         case 'last_month':
           startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -132,6 +133,7 @@ export default function ReportsPage() {
           break;
         case 'this_year':
           startDate = new Date(today.getFullYear(), 0, 1);
+          endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
           break;
         default:
           startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
