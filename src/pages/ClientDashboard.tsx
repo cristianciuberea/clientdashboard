@@ -17,7 +17,7 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [dateRange, setDateRange] = useState<'today' | '7d' | '30d' | '90d'>('today');
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
@@ -86,6 +86,11 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
     orderCount: 0,
   });
 
+  const [yesterdayMetrics, setYesterdayMetrics] = useState({
+    totalRevenue: 0,
+    orderCount: 0,
+  });
+
   useEffect(() => {
     if (selectedClient) {
       fetchMetrics(selectedClient.id);
@@ -94,9 +99,27 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
 
   const fetchMetrics = async (clientId: string) => {
     try {
-      const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysAgo);
+      let startDate: Date;
+      let todayDate: string;
+      let yesterdayDate: string;
+
+      if (dateRange === 'today') {
+        // Pentru azi, preluăm azi și ieri pentru comparație
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        todayDate = today.toISOString().split('T')[0];
+        yesterdayDate = yesterday.toISOString().split('T')[0];
+        
+        startDate = yesterday; // încep de ieri pentru a prelua ambele zile
+      } else {
+        const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysAgo);
+        todayDate = new Date().toISOString().split('T')[0];
+        yesterdayDate = '';
+      }
 
       const { data, error } = await supabase
         .from('metrics_snapshots')
@@ -126,21 +149,45 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
         let adClicks = 0;
         let adImpressions = 0;
 
+        // Pentru comparație cu ieri
+        let yesterdayRevenue = 0;
+        let yesterdayOrders = 0;
+
         for (const snapshot of latestSnapshots.values()) {
           const metrics = snapshot.metrics as any;
+          const isToday = dateRange === 'today' && snapshot.date === todayDate;
+          const isYesterday = dateRange === 'today' && snapshot.date === yesterdayDate;
 
           if (snapshot.platform === 'woocommerce') {
-            totalRevenue += metrics.totalRevenue || 0;
-            totalConversions += metrics.completedOrders || 0;
-            totalOrders += metrics.totalOrders || 0;
+            if (dateRange === 'today') {
+              if (isToday) {
+                totalRevenue += metrics.totalRevenue || 0;
+                totalConversions += metrics.completedOrders || 0;
+                totalOrders += metrics.totalOrders || 0;
+              }
+              if (isYesterday) {
+                yesterdayRevenue += metrics.totalRevenue || 0;
+                yesterdayOrders += metrics.totalOrders || 0;
+              }
+            } else {
+              totalRevenue += metrics.totalRevenue || 0;
+              totalConversions += metrics.completedOrders || 0;
+              totalOrders += metrics.totalOrders || 0;
+            }
           } else if (snapshot.platform === 'facebook_ads') {
-            adSpend += metrics.spend || 0;
-            adClicks += metrics.clicks || 0;
-            adImpressions += metrics.impressions || 0;
+            if (dateRange !== 'today' || isToday) {
+              adSpend += metrics.spend || 0;
+              adClicks += metrics.clicks || 0;
+              adImpressions += metrics.impressions || 0;
+            }
           } else if (snapshot.platform === 'google_analytics') {
-            websiteVisitors += metrics.users || 0;
+            if (dateRange !== 'today' || isToday) {
+              websiteVisitors += metrics.users || 0;
+            }
           } else if (snapshot.platform === 'mailerlite') {
-            emailSubscribers = Math.max(emailSubscribers, metrics.activeSubscribers || 0);
+            if (dateRange !== 'today' || isToday) {
+              emailSubscribers = Math.max(emailSubscribers, metrics.activeSubscribers || 0);
+            }
           }
         }
 
@@ -154,6 +201,13 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
           adImpressions,
           orderCount: totalOrders,
         });
+
+        if (dateRange === 'today') {
+          setYesterdayMetrics({
+            totalRevenue: yesterdayRevenue,
+            orderCount: yesterdayOrders,
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching metrics:', error);
@@ -169,6 +223,24 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
     adClicks: 5678,
     adImpressions: 123456,
     orderCount: 187,
+  };
+
+  // Calculează diferența și procentul față de ieri
+  const getComparisonText = (todayValue: number, yesterdayValue: number, label: string) => {
+    if (dateRange !== 'today' || yesterdayValue === 0) {
+      return realMetrics.totalRevenue > 0 ? label : "+12.5% from last period";
+    }
+    
+    const diff = todayValue - yesterdayValue;
+    const percentChange = ((diff / yesterdayValue) * 100).toFixed(1);
+    const sign = diff >= 0 ? '+' : '';
+    
+    return `${sign}${percentChange}% vs ieri`;
+  };
+
+  const getChangeType = (todayValue: number, yesterdayValue: number): 'positive' | 'negative' | 'neutral' => {
+    if (dateRange !== 'today' || yesterdayValue === 0) return 'positive';
+    return todayValue >= yesterdayValue ? 'positive' : 'negative';
   };
 
   if (loading) {
@@ -225,7 +297,7 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
               </button>
             )}
             <div className="flex items-center space-x-2 bg-white border border-slate-200 rounded-lg p-1">
-              {(['7d', '30d', '90d'] as const).map((range) => (
+              {(['today', '7d', '30d', '90d'] as const).map((range) => (
                 <button
                   key={range}
                   onClick={() => setDateRange(range)}
@@ -235,7 +307,7 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  {range === '7d' ? 'Last 7 days' : range === '30d' ? 'Last 30 days' : 'Last 90 days'}
+                  {range === 'today' ? 'Azi' : range === '7d' ? 'Last 7 days' : range === '30d' ? 'Last 30 days' : 'Last 90 days'}
                 </button>
               ))}
             </div>
@@ -263,24 +335,24 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
           <StatCard
             title="Total Revenue"
             value={`${mockMetrics.totalRevenue.toLocaleString()} RON`}
-            change={realMetrics.totalRevenue > 0 ? "From WooCommerce" : "+12.5% from last period"}
-            changeType="positive"
+            change={getComparisonText(mockMetrics.totalRevenue, yesterdayMetrics.totalRevenue, "From WooCommerce")}
+            changeType={getChangeType(mockMetrics.totalRevenue, yesterdayMetrics.totalRevenue)}
             icon={DollarSign}
             iconColor="bg-green-500"
           />
           <StatCard
             title="Conversions"
             value={mockMetrics.totalConversions}
-            change={realMetrics.totalRevenue > 0 ? "Completed orders" : "+8.3% from last period"}
-            changeType="positive"
+            change={getComparisonText(mockMetrics.totalConversions, yesterdayMetrics.orderCount, "Completed orders")}
+            changeType={getChangeType(mockMetrics.totalConversions, yesterdayMetrics.orderCount)}
             icon={TrendingUp}
             iconColor="bg-blue-500"
           />
           <StatCard
             title="Total Orders"
             value={mockMetrics.orderCount.toLocaleString()}
-            change={realMetrics.totalRevenue > 0 ? "All statuses" : "+15.2% from last period"}
-            changeType="positive"
+            change={getComparisonText(mockMetrics.orderCount, yesterdayMetrics.orderCount, "All orders")}
+            changeType={getChangeType(mockMetrics.orderCount, yesterdayMetrics.orderCount)}
             icon={ShoppingCart}
             iconColor="bg-purple-500"
           />
