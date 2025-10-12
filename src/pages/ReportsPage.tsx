@@ -326,88 +326,56 @@ export default function ReportsPage() {
         console.log('Today:', today);
         console.log('Yesterday:', yesterday);
 
-        // Calculate period totals (difference between last and first snapshot in selected period)
+        // Calculate period totals by summing topProducts revenue from all snapshots
+        // Each snapshot contains DAILY sales, not cumulative
         if (wooSnapshots.length > 0) {
-          const firstPeriodSnapshot = wooSnapshots.find(s => s.date === uniqueDates[0]);
-          const lastPeriodSnapshot = wooSnapshots.find(s => s.date === uniqueDates[uniqueDates.length - 1]);
+          aggregatedRevenue = 0;
+          aggregatedOrders = 0;
 
-          if (firstPeriodSnapshot && lastPeriodSnapshot) {
-            const firstMetrics = firstPeriodSnapshot.metrics as any;
-            const lastMetrics = lastPeriodSnapshot.metrics as any;
-
-            // Since WooCommerce data might decrease (orders deleted), use absolute difference
-            // Take the higher value minus the lower value
-            const firstRevenue = firstMetrics.totalRevenue || 0;
-            const lastRevenue = lastMetrics.totalRevenue || 0;
-            const firstOrders = firstMetrics.totalOrders || 0;
-            const lastOrders = lastMetrics.totalOrders || 0;
-
-            aggregatedRevenue = Math.abs(lastRevenue - firstRevenue);
-            aggregatedOrders = Math.abs(lastOrders - firstOrders);
-
-            console.log('PERIOD TOTALS:', {
-              firstDate: uniqueDates[0],
-              firstRevenue,
-              lastDate: uniqueDates[uniqueDates.length - 1],
-              lastRevenue,
-              periodRevenue: aggregatedRevenue,
-              periodOrders: aggregatedOrders
-            });
+          for (const snapshot of wooSnapshots) {
+            const metrics = snapshot.metrics as any;
+            if (metrics.topProducts) {
+              for (const product of metrics.topProducts) {
+                aggregatedRevenue += product.revenue || 0;
+                aggregatedOrders += product.quantity || 0;
+              }
+            }
           }
-        }
 
-        // Find snapshots by date using sorted array
-        const todayIndex = uniqueDates.indexOf(today);
-        const yesterdayIndex = uniqueDates.indexOf(yesterday);
-
-        const todaySnapshot = todayIndex >= 0 ? wooSnapshots.find(s => s.date === uniqueDates[todayIndex]) : null;
-        const dayBeforeTodaySnapshot = todayIndex > 0 ? wooSnapshots.find(s => s.date === uniqueDates[todayIndex - 1]) : null;
-
-        const yesterdaySnapshot = yesterdayIndex >= 0 ? wooSnapshots.find(s => s.date === uniqueDates[yesterdayIndex]) : null;
-        const dayBeforeYesterdaySnapshot = yesterdayIndex > 0 ? wooSnapshots.find(s => s.date === uniqueDates[yesterdayIndex - 1]) : null;
-
-        console.log('Snapshot lookup:', {
-          todayIndex,
-          yesterdayIndex,
-          todayFound: !!todaySnapshot,
-          dayBeforeTodayFound: !!dayBeforeTodaySnapshot,
-          yesterdayFound: !!yesterdaySnapshot,
-          dayBeforeYesterdayFound: !!dayBeforeYesterdaySnapshot
-        });
-
-        // Calculate TODAY's sales (absolute difference)
-        if (todaySnapshot && dayBeforeTodaySnapshot) {
-          const todayMetrics = todaySnapshot.metrics as any;
-          const dayBeforeMetrics = dayBeforeTodaySnapshot.metrics as any;
-
-          calculatedTodayRevenue = Math.abs((todayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0));
-          calculatedTodayOrders = Math.abs((todayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0));
-
-          console.log('TODAY sales:', {
-            todayDate: today,
-            todayTotal: todayMetrics.totalRevenue,
-            dayBeforeDate: dayBeforeTodaySnapshot.date,
-            dayBeforeTotal: dayBeforeMetrics.totalRevenue,
-            todaySales: calculatedTodayRevenue,
-            todayOrders: calculatedTodayOrders
+          console.log('PERIOD TOTALS (from topProducts):', {
+            periodRevenue: aggregatedRevenue,
+            periodOrders: aggregatedOrders,
+            snapshots: wooSnapshots.length
           });
         }
 
-        // Calculate YESTERDAY's sales (absolute difference)
-        if (yesterdaySnapshot && dayBeforeYesterdaySnapshot) {
-          const yesterdayMetrics = yesterdaySnapshot.metrics as any;
-          const dayBeforeMetrics = dayBeforeYesterdaySnapshot.metrics as any;
+        // Get TODAY's sales directly from topProducts
+        const todaySnapshot = wooSnapshots.find(s => s.date === today);
+        if (todaySnapshot) {
+          const metrics = todaySnapshot.metrics as any;
+          if (metrics.topProducts) {
+            calculatedTodayRevenue = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.revenue || 0), 0);
+            calculatedTodayOrders = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0);
+          }
+          console.log('TODAY sales:', {
+            date: today,
+            revenue: calculatedTodayRevenue,
+            orders: calculatedTodayOrders
+          });
+        }
 
-          calculatedYesterdayRevenue = Math.abs((yesterdayMetrics.totalRevenue || 0) - (dayBeforeMetrics.totalRevenue || 0));
-          calculatedYesterdayOrders = Math.abs((yesterdayMetrics.totalOrders || 0) - (dayBeforeMetrics.totalOrders || 0));
-
+        // Get YESTERDAY's sales directly from topProducts
+        const yesterdaySnapshot = wooSnapshots.find(s => s.date === yesterday);
+        if (yesterdaySnapshot) {
+          const metrics = yesterdaySnapshot.metrics as any;
+          if (metrics.topProducts) {
+            calculatedYesterdayRevenue = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.revenue || 0), 0);
+            calculatedYesterdayOrders = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0);
+          }
           console.log('YESTERDAY sales:', {
-            yesterdayDate: yesterday,
-            yesterdayTotal: yesterdayMetrics.totalRevenue,
-            dayBeforeDate: dayBeforeYesterdaySnapshot.date,
-            dayBeforeTotal: dayBeforeMetrics.totalRevenue,
-            yesterdaySales: calculatedYesterdayRevenue,
-            yesterdayOrders: calculatedYesterdayOrders
+            date: yesterday,
+            revenue: calculatedYesterdayRevenue,
+            orders: calculatedYesterdayOrders
           });
         }
 
