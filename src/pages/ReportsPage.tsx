@@ -529,11 +529,6 @@ export default function ReportsPage() {
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
 
-          fbDailyData,
-          totals: facebookAds
-        });
-
-
         setMetrics({
           totalRevenue: aggregatedRevenue,
           totalOrders: aggregatedOrders,
