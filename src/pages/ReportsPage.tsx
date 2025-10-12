@@ -536,42 +536,42 @@ export default function ReportsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl border border-red-700 p-4 shadow-xl">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white">Yesterday</h3>
-                  <Calendar className="w-5 h-5 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-bold text-slate-800">Yesterday</h3>
+                  <Calendar className="w-4 h-4 text-slate-400" />
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-sm text-red-100 mb-1">Revenue</p>
-                    <p className="text-2xl font-bold text-white">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
+                    <p className="text-xs text-slate-600 mb-1">Revenue</p>
+                    <p className="text-xl font-bold text-slate-800">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
                   </div>
                   <div>
-                    <p className="text-sm text-red-100 mb-1">Orders</p>
-                    <p className="text-xl font-semibold text-white">{metrics.yesterdayOrders || 0}</p>
+                    <p className="text-xs text-slate-600 mb-1">Orders</p>
+                    <p className="text-lg font-semibold text-slate-700">{metrics.yesterdayOrders || 0}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl border border-green-700 p-4 shadow-xl">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white">Today</h3>
-                  <Calendar className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-bold text-slate-800">Today</h3>
+                  <Calendar className="w-4 h-4 text-blue-500" />
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-sm text-green-100 mb-1">Revenue</p>
+                    <p className="text-xs text-slate-600 mb-1">Revenue</p>
                     <div className="flex items-baseline space-x-2">
-                      <p className="text-2xl font-bold text-white">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
+                      <p className="text-xl font-bold text-slate-800">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
                       {metrics.yesterdayRevenue !== undefined && metrics.yesterdayRevenue > 0 && metrics.todayRevenue !== undefined && (
-                        <span className={`flex items-center text-sm font-medium ${
-                          metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-white' : 'text-green-200'
+                        <span className={`flex items-center text-xs font-medium ${
+                          metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {metrics.todayRevenue >= metrics.yesterdayRevenue ? (
-                            <ArrowUpRight className="w-4 h-4" />
+                            <ArrowUpRight className="w-3 h-3" />
                           ) : (
-                            <ArrowDownRight className="w-4 h-4" />
+                            <ArrowDownRight className="w-3 h-3" />
                           )}
                           {Math.abs(((metrics.todayRevenue - metrics.yesterdayRevenue) / metrics.yesterdayRevenue) * 100).toFixed(1)}%
                         </span>
@@ -579,17 +579,17 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-green-100 mb-1">Orders</p>
+                    <p className="text-xs text-slate-600 mb-1">Orders</p>
                     <div className="flex items-baseline space-x-2">
-                      <p className="text-xl font-semibold text-white">{metrics.todayOrders || 0}</p>
+                      <p className="text-lg font-semibold text-slate-700">{metrics.todayOrders || 0}</p>
                       {metrics.yesterdayOrders !== undefined && metrics.yesterdayOrders > 0 && metrics.todayOrders !== undefined && (
-                        <span className={`flex items-center text-sm font-medium ${
-                          metrics.todayOrders >= metrics.yesterdayOrders ? 'text-white' : 'text-green-200'
+                        <span className={`flex items-center text-xs font-medium ${
+                          metrics.todayOrders >= metrics.yesterdayOrders ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {metrics.todayOrders >= metrics.yesterdayOrders ? (
-                            <ArrowUpRight className="w-4 h-4" />
+                            <ArrowUpRight className="w-3 h-3" />
                           ) : (
-                            <ArrowDownRight className="w-4 h-4" />
+                            <ArrowDownRight className="w-3 h-3" />
                           )}
                           {Math.abs(((metrics.todayOrders - metrics.yesterdayOrders) / metrics.yesterdayOrders) * 100).toFixed(1)}%
                         </span>
@@ -601,69 +601,69 @@ export default function ReportsPage() {
             </div>
 
             {metrics.facebookAds && (
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-4 mb-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-3 mb-3">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-800">Facebook Ads Performance</h2>
-                    <p className="text-sm text-blue-700">Campaign metrics for selected period</p>
+                    <h2 className="text-base font-bold text-slate-800">Facebook Ads Performance</h2>
+                    <p className="text-xs text-blue-700">Campaign metrics for selected period</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">Ad Spend</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.spend.toFixed(2)} RON</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.spend.toFixed(2)} RON</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">Impressions</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.impressions.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.impressions.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">Clicks</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.clicks.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.clicks.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">Conversions</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.conversions}</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.conversions}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">CTR</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.ctr.toFixed(2)}%</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.ctr.toFixed(2)}%</p>
                     <p className="text-xs text-slate-500 mt-1">Click-through rate</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">CPC</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.cpc.toFixed(2)} RON</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cpc.toFixed(2)} RON</p>
                     <p className="text-xs text-slate-500 mt-1">Cost per click</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">CPM</p>
-                    <p className="text-xl font-bold text-slate-800">{metrics.facebookAds.cpm.toFixed(2)} RON</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cpm.toFixed(2)} RON</p>
                     <p className="text-xs text-slate-500 mt-1">Cost per 1000 impressions</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-green-200 bg-green-50">
+                  <div className="bg-white rounded-lg p-2 border border-green-200 bg-green-50">
                     <p className="text-xs text-slate-600 mb-1">ROAS</p>
-                    <p className="text-xl font-bold text-green-700">{metrics.facebookAds.roas.toFixed(2)}x</p>
+                    <p className="text-lg font-bold text-green-700">{metrics.facebookAds.roas.toFixed(2)}x</p>
                     <p className="text-xs text-slate-500 mt-1">Return on ad spend</p>
                   </div>
                 </div>
 
                 {metrics.facebookAds.roas > 0 && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+                  <div className="mt-2 p-2 bg-white rounded-lg border border-blue-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-slate-700">Campaign Efficiency</p>
+                        <p className="text-xs font-medium text-slate-700">Campaign Efficiency</p>
                         <p className="text-xs text-slate-500 mt-1">
                           For every 1 RON spent, you earned {metrics.facebookAds.roas.toFixed(2)} RON
                         </p>
                       </div>
-                      <div className={`px-4 py-2 rounded-lg font-bold ${
+                      <div className={`px-3 py-1 rounded-lg font-bold text-xs ${
                         metrics.facebookAds.roas >= 3
                           ? 'bg-green-100 text-green-700'
                           : metrics.facebookAds.roas >= 2
@@ -678,29 +678,29 @@ export default function ReportsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-bold text-slate-800">First Day Top Products</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+              <div className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-bold text-slate-800">First Day Top Products</h2>
                   <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
                     {metrics.firstDayDate ? new Date(metrics.firstDayDate).toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }) : 'N/A'}
                   </span>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {metrics.firstDayTopProducts.length > 0 ? (
                     metrics.firstDayTopProducts.slice(0, 5).map((product, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
+                      <div key={index} className="flex items-center justify-between p-2 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-slate-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                          <div className="w-7 h-7 bg-slate-500 text-white rounded-full flex items-center justify-center font-bold text-xs">
                             #{index + 1}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-slate-800 text-sm">{product.name}</p>
-                            <p className="text-xs text-slate-500">{product.quantity} units sold</p>
+                            <p className="font-medium text-slate-800 text-xs">{product.name}</p>
+                            <p className="text-xs text-slate-500">{product.quantity} units</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-slate-700">{product.revenue.toLocaleString()} RON</p>
+                          <p className="font-bold text-slate-700 text-sm">{product.revenue.toLocaleString()} RON</p>
                         </div>
                       </div>
                     ))
@@ -713,28 +713,28 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-slate-800">Last Day Top Products</h2>
+              <div className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-bold text-slate-800">Last Day Top Products</h2>
                   <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                     {metrics.lastDayDate ? new Date(metrics.lastDayDate).toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }) : 'Live'}
                   </span>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {metrics.lastDayTopProducts.length > 0 ? (
                     metrics.lastDayTopProducts.slice(0, 5).map((product, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
+                      <div key={index} className="flex items-center justify-between p-2 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                          <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-xs">
                             #{index + 1}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-slate-800 text-sm">{product.name}</p>
-                            <p className="text-xs text-slate-500">{product.quantity} units sold</p>
+                            <p className="font-medium text-slate-800 text-xs">{product.name}</p>
+                            <p className="text-xs text-slate-500">{product.quantity} units</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-green-700">{product.revenue.toLocaleString()} RON</p>
+                          <p className="font-bold text-green-700 text-sm">{product.revenue.toLocaleString()} RON</p>
                         </div>
                       </div>
                     ))
@@ -747,17 +747,17 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <h2 className="text-lg font-bold text-slate-800 mb-4">Top Products (Period Overview)</h2>
-                <div className="space-y-4">
+              <div className="bg-white rounded-lg border border-slate-200 p-3">
+                <h2 className="text-base font-bold text-slate-800 mb-2">Top Products (Period Overview)</h2>
+                <div className="space-y-2">
                   {metrics.topProducts.slice(0, 5).map((product, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
                       <div className="flex-1">
-                        <p className="font-medium text-slate-800 text-sm">{product.name}</p>
-                        <p className="text-xs text-slate-500">{product.quantity} units sold</p>
+                        <p className="font-medium text-slate-800 text-xs">{product.name}</p>
+                        <p className="text-xs text-slate-500">{product.quantity} units</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-slate-800">{product.revenue.toLocaleString()} RON</p>
+                        <p className="font-bold text-slate-800 text-sm">{product.revenue.toLocaleString()} RON</p>
                       </div>
                     </div>
                   ))}
@@ -825,24 +825,24 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, icon: Icon, iconBg, iconColor, trend }: MetricCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 ${iconBg} rounded-lg flex items-center justify-center`}>
-          <Icon className={`w-6 h-6 ${iconColor}`} />
+    <div className="bg-white rounded-lg border border-slate-200 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
+          <Icon className={`w-5 h-5 ${iconColor}`} />
         </div>
         {trend !== undefined && (
           <div className={`flex items-center space-x-1 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {trend >= 0 ? (
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-3 h-3" />
             ) : (
-              <ArrowDownRight className="w-4 h-4" />
+              <ArrowDownRight className="w-3 h-3" />
             )}
-            <span className="text-sm font-semibold">{Math.abs(trend)}%</span>
+            <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
           </div>
         )}
       </div>
-      <p className="text-sm text-slate-600 mb-1">{title}</p>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
+      <p className="text-xs text-slate-600 mb-1">{title}</p>
+      <p className="text-xl font-bold text-slate-800">{value}</p>
     </div>
   );
 }
