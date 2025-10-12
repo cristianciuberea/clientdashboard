@@ -103,11 +103,20 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
         .select('*')
         .eq('client_id', clientId)
         .gte('date', startDate.toISOString().split('T')[0])
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       if (data && data.length > 0) {
+        const latestSnapshots = new Map<string, any>();
+
+        for (const snapshot of data) {
+          const key = `${snapshot.date}_${snapshot.platform}`;
+          if (!latestSnapshots.has(key)) {
+            latestSnapshots.set(key, snapshot);
+          }
+        }
+
         let totalRevenue = 0;
         let totalConversions = 0;
         let totalOrders = 0;
@@ -117,7 +126,7 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
         let adClicks = 0;
         let adImpressions = 0;
 
-        for (const snapshot of data) {
+        for (const snapshot of latestSnapshots.values()) {
           const metrics = snapshot.metrics as any;
 
           if (snapshot.platform === 'woocommerce') {
