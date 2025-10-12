@@ -986,10 +986,28 @@ export default function ReportsPage() {
                 <div className="bg-white rounded-lg border border-slate-200 p-2">
                   <p className="text-xs text-slate-600 mb-1">Total Revenue</p>
                   <p className="text-lg font-bold text-slate-800">{metrics.totalRevenue.toLocaleString()} RON</p>
+                  {dateRange === 'today' && metrics.yesterdayRevenue && metrics.yesterdayRevenue > 0 && (
+                    <p className={`text-xs mt-1 font-medium ${
+                      metrics.totalRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {metrics.totalRevenue >= metrics.yesterdayRevenue ? '↑' : '↓'} 
+                      {' '}
+                      {((metrics.totalRevenue - metrics.yesterdayRevenue) / metrics.yesterdayRevenue * 100).toFixed(1)}% vs ieri
+                    </p>
+                  )}
                 </div>
                 <div className="bg-white rounded-lg border border-slate-200 p-2">
                   <p className="text-xs text-slate-600 mb-1">Total Orders</p>
                   <p className="text-lg font-bold text-slate-800">{metrics.totalOrders}</p>
+                  {dateRange === 'today' && metrics.yesterdayOrders && metrics.yesterdayOrders > 0 && (
+                    <p className={`text-xs mt-1 font-medium ${
+                      metrics.totalOrders >= metrics.yesterdayOrders ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {metrics.totalOrders >= metrics.yesterdayOrders ? '↑' : '↓'} 
+                      {' '}
+                      {((metrics.totalOrders - metrics.yesterdayOrders) / metrics.yesterdayOrders * 100).toFixed(1)}% vs ieri
+                    </p>
+                  )}
                 </div>
                 <div className="bg-white rounded-lg border border-slate-200 p-2">
                   <p className="text-xs text-slate-600 mb-1">Average Order</p>
