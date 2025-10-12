@@ -245,7 +245,7 @@ function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         .from('profiles')
         .select('organization_id')
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
+        .maybeSingle();
 
       if (!profile?.organization_id) {
         throw new Error('Organization not found');

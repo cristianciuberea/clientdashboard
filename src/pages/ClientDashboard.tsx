@@ -517,13 +517,13 @@ function EditClientModal({ client, onClose, onSuccess }: EditClientModalProps) {
             </label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'paused' | 'archived' })}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'paused' | 'inactive' })}
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="active">Active</option>
               <option value="paused">Paused</option>
-              <option value="archived">Archived</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
 

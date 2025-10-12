@@ -30,6 +30,8 @@ Deno.serve(async (req: Request) => {
 
     const { integration_id, client_id, date_from, date_to } = await req.json();
 
+    console.log('Sync request params:', { integration_id, client_id, date_from, date_to });
+
     if (!integration_id || !client_id) {
       throw new Error('Missing required parameters: integration_id, client_id');
     }
@@ -55,9 +57,20 @@ Deno.serve(async (req: Request) => {
       throw new Error('Missing WooCommerce credentials');
     }
 
-    const allowedStatuses = config?.order_statuses || ['processing', 'completed'];
+    const allowedStatuses = config?.order_statuses || ['processing', 'completed', 'on-hold', 'pending', 'cancelled', 'refunded', 'failed'];
 
-    const targetDate = date_to || new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    const targetDate = date_to || today;
+
+    console.log(`Syncing WooCommerce data for date: ${targetDate}`);
+    console.log(`Date range: from ${date_from || targetDate} to ${targetDate}`);
+
+    // Determine if this is a single day sync or range sync
+    const isRangeSync = date_from && date_from !== targetDate;
+    const startDate = date_from || targetDate;
+    const endDate = targetDate;
+
+    console.log(`Is range sync: ${isRangeSync}, start: ${startDate}, end: ${endDate}`);
 
     const auth = btoa(`${consumerKey}:${consumerSecret}`);
     const headers = {
@@ -65,8 +78,8 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
     };
 
-    const startDateTime = `${targetDate}T00:00:00`;
-    const endDateTime = `${targetDate}T23:59:59`;
+    const startDateTime = `${startDate}T00:00:00`;
+    const endDateTime = `${endDate}T23:59:59`;
 
     let allOrders: any[] = [];
     let page = 1;
@@ -96,6 +109,13 @@ Deno.serve(async (req: Request) => {
 
     const orders = allOrders;
 
+    console.log(`Total orders fetched from WooCommerce: ${orders.length}`);
+    console.log('Order statuses:', orders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>));
+    console.log('Allowed statuses for processing:', allowedStatuses);
+
     const productsUrl = `${storeUrl}/wp-json/wc/v3/products?per_page=100`;
     const productsResponse = await fetch(productsUrl, { headers });
     
@@ -105,17 +125,52 @@ Deno.serve(async (req: Request) => {
       totalProducts = products.length;
     }
 
+    // For range sync, save aggregated metrics with date = startDate (to avoid conflicts with daily snapshots)
+    // For single day sync, save metrics for that specific day
+    const snapshotDate = isRangeSync ? startDate : targetDate;
+
+    console.log(`Saving snapshot for date: ${snapshotDate} (${isRangeSync ? 'range' : 'single day'}) with metric_type: ${isRangeSync ? 'ecommerce_aggregate' : 'ecommerce'}`);
+
     let totalRevenue = 0;
     let completedOrders = 0;
     let pendingOrders = 0;
     let processingOrders = 0;
+    let onHoldOrders = 0;
+    let cancelledOrders = 0;
+    let refundedOrders = 0;
+    let failedOrders = 0;
+    let otherStatusOrders = 0;
     const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
 
     for (const order of orders) {
-      if (order.status === 'completed') completedOrders++;
-      if (order.status === 'pending') pendingOrders++;
-      if (order.status === 'processing') processingOrders++;
+      // Count all orders by status
+      switch (order.status) {
+        case 'completed':
+          completedOrders++;
+          break;
+        case 'pending':
+          pendingOrders++;
+          break;
+        case 'processing':
+          processingOrders++;
+          break;
+        case 'on-hold':
+          onHoldOrders++;
+          break;
+        case 'cancelled':
+          cancelledOrders++;
+          break;
+        case 'refunded':
+          refundedOrders++;
+          break;
+        case 'failed':
+          failedOrders++;
+          break;
+        default:
+          otherStatusOrders++;
+      }
 
+      // Only include revenue and products for valid orders
       if (!allowedStatuses.includes(order.status)) {
         continue;
       }
@@ -140,16 +195,31 @@ Deno.serve(async (req: Request) => {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
-    const validOrdersCount = completedOrders + processingOrders;
+    // Total orders = only completed + processing (valid orders)
+    const totalOrders = completedOrders + processingOrders;
+
+    console.log(`Final metrics for ${snapshotDate}:`);
+    console.log(`- Total orders from API: ${orders.length}`);
+    console.log(`- Status breakdown:`);
+    console.log(`  - Completed: ${completedOrders}`);
+    console.log(`  - Processing: ${processingOrders}`);
+    console.log(`  - Pending: ${pendingOrders}`);
+    console.log(`  - On-hold: ${onHoldOrders}`);
+    console.log(`  - Cancelled: ${cancelledOrders}`);
+    console.log(`  - Refunded: ${refundedOrders}`);
+    console.log(`  - Failed: ${failedOrders}`);
+    console.log(`  - Other: ${otherStatusOrders}`);
+    console.log(`- Total revenue (from valid orders): ${totalRevenue}`);
+    console.log(`- Top products count: ${topProducts.length}`);
 
     const metrics: WooCommerceMetrics = {
-      totalOrders: validOrdersCount,
+      totalOrders,
       totalRevenue,
       totalProducts,
       completedOrders,
       pendingOrders,
       processingOrders,
-      averageOrderValue: validOrdersCount > 0 ? totalRevenue / validOrdersCount : 0,
+      averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
       topProducts,
     };
 
@@ -159,14 +229,17 @@ Deno.serve(async (req: Request) => {
         client_id,
         integration_id,
         platform: 'woocommerce',
-        metric_type: 'ecommerce',
-        date: targetDate,
+        metric_type: isRangeSync ? 'ecommerce_aggregate' : 'ecommerce',
+        date: snapshotDate,
         metrics: metrics,
       });
 
     if (insertError) {
+      console.error(`Failed to insert metrics for ${snapshotDate}:`, insertError);
       throw insertError;
     }
+
+    console.log(`Successfully saved aggregated metrics for ${snapshotDate}`);
 
     const { error: updateError } = await supabaseClient
       .from('integrations')

@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: data.user.id,
           email,
           full_name: fullName,
-          role: 'client_viewer',
+          role: 'client_viewer' as const,
         });
 
       if (profileError) return { error: profileError };

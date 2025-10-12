@@ -391,7 +391,8 @@ interface AlertSettingsModalProps {
   onClose: () => void;
 }
 
-function AlertSettingsModal({ clientId, onClose }: AlertSettingsModalProps) {
+function AlertSettingsModal({ clientId: _clientId, onClose }: AlertSettingsModalProps) {
+  // TODO: Use _clientId for saving client-specific alert settings
   const [settings, setSettings] = useState({
     budgetThreshold: 90,
     performanceDropThreshold: 20,

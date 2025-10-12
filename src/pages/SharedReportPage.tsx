@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { BarChart3, TrendingUp, Users, ShoppingCart, Mail, FileText, ExternalLink, DollarSign, Eye, MousePointer, AlertTriangle } from 'lucide-react';
+import { BarChart3, TrendingUp, ShoppingCart, Mail, ExternalLink, AlertTriangle } from 'lucide-react';
 
 interface SharedReportPageProps {
   token: string;

@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingCart, Package, ArrowUpRight, ArrowDownRight, RefreshCw, Share2, Copy, Check, X, ExternalLink } from 'lucide-react';
+import { FileText, Calendar, Package, RefreshCw, Share2, Copy, Check, X, ExternalLink } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 
 type Client = Database['public']['Tables']['clients']['Row'];
-type MetricsSnapshot = Database['public']['Tables']['metrics_snapshots']['Row'];
 type Integration = Database['public']['Tables']['integrations']['Row'];
 
 interface AggregatedMetrics {
@@ -68,10 +67,13 @@ export default function ReportsPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<AggregatedMetrics | null>(null);
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year'>('today');
   const [syncing, setSyncing] = useState(false);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [showShareModal, setShowShareModal] = useState(false);
+  // TODO: Implement sharing functionality
+  // const [generatedLink, setGeneratedLink] = useState('');
+  // const [activeLinks, setActiveLinks] = useState<any[]>([]);
 
   const fetchClients = async () => {
     try {
@@ -96,28 +98,95 @@ export default function ReportsPage() {
 
   const fetchMetrics = useCallback(async (clientId: string) => {
     try {
-      const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysAgo);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
 
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      let startDate: Date;
+      let endDate: Date = new Date();
+
+      switch (dateRange) {
+        case 'today':
+          startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+          break;
+        case 'yesterday':
+          startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          break;
+        case 'this_month':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          break;
+        case 'last_month':
+          startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          endDate = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+          break;
+        case 'this_year':
+          startDate = new Date(today.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      }
 
       console.log('=== FETCH METRICS ===');
       console.log('dateRange:', dateRange);
-      console.log('daysAgo:', daysAgo);
       console.log('startDate:', startDate.toISOString().split('T')[0]);
-      console.log('today:', today);
-      console.log('yesterday:', yesterday);
+      console.log('endDate:', endDate.toISOString().split('T')[0]);
+      console.log('Date range filter active:', { gte: startDate.toISOString().split('T')[0], lte: endDate.toISOString().split('T')[0] });
 
-      const { data, error } = await supabase
+      // First, get ALL available snapshots for this client
+      const { data: allData, error: allError } = await supabase
         .from('metrics_snapshots')
         .select('*')
         .eq('client_id', clientId)
-        // .gte('date', startDate.toISOString().split('T')[0])  // TEMPORARILY DISABLED FOR TESTING
         .order('date', { ascending: false });
 
-      console.log('Metrics query result:', { data, error, count: data?.length });
+      if (allError) {
+        console.error('Error fetching all data:', allError);
+        throw allError;
+      }
+
+      console.log('=== ALL AVAILABLE DATA ===');
+      console.log('Total snapshots in DB:', allData?.length || 0);
+      if (allData && allData.length > 0) {
+        console.log('Date range in DB:', {
+          earliest: allData[allData.length - 1]?.date,
+          latest: allData[0]?.date
+        });
+        console.log('All dates:', allData.map(s => s.date));
+      }
+
+      // Now filter the data in JavaScript based on our date range
+      // Build date strings manually to avoid timezone issues
+      const startYear = startDate.getFullYear();
+      const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+      const startDay = String(startDate.getDate()).padStart(2, '0');
+      const startDateStr = `${startYear}-${startMonth}-${startDay}`;
+
+      const endYear = endDate.getFullYear();
+      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+      const endDay = String(endDate.getDate()).padStart(2, '0');
+      const endDateStr = `${endYear}-${endMonth}-${endDay}`;
+
+      console.log('Filtering with LOCAL date strings:', startDateStr, 'to', endDateStr);
+      console.log('Raw startDate object:', startDate, 'Raw endDate object:', endDate);
+
+      const data = allData?.filter(snapshot => {
+        const result = snapshot.date >= startDateStr && snapshot.date <= endDateStr;
+        if (result) {
+          console.log('Including snapshot:', snapshot.date, snapshot.platform);
+        }
+        return result;
+      });
+
+      console.log('=== FILTERED DATA ===');
+      console.log('Filtered snapshots:', data?.length || 0);
+      console.log('Filter criteria:', {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      });
+
+      const error = null; // No error since we filtered client-side
 
       if (error) {
         console.error('Metrics fetch error:', error);
@@ -177,8 +246,17 @@ export default function ReportsPage() {
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
-        // Filter WooCommerce/WordPress snapshots for calculating daily differences
-        const wooSnapshots = sortedSnapshots.filter(s => s.platform === 'woocommerce' || s.platform === 'wordpress');
+        // Separate WooCommerce aggregate vs daily snapshots
+        const wooAggregateSnapshots = sortedSnapshots.filter(
+          (s) => s.platform === 'woocommerce' && (s as any).metric_type === 'ecommerce_aggregate'
+        );
+        // Filter WooCommerce/WordPress daily snapshots (exclude aggregated)
+        const wooSnapshots = sortedSnapshots.filter(
+          (s) => (s.platform === 'woocommerce' || s.platform === 'wordpress') && (s as any).metric_type !== 'ecommerce_aggregate'
+        );
+
+        console.log('WooCommerce aggregate snapshots:', wooAggregateSnapshots.length);
+        wooAggregateSnapshots.forEach(s => console.log('Aggregate snapshot:', s.date, (s as any).metric_type, (s.metrics as any)?.totalOrders));
 
         if (sortedSnapshots.length > 0) {
           firstDayDate = sortedSnapshots[0].date;
@@ -332,27 +410,146 @@ export default function ReportsPage() {
         console.log('Today:', today);
         console.log('Yesterday:', yesterday);
 
-        // Calculate period totals by summing topProducts revenue from all snapshots
-        // Each snapshot contains DAILY sales, not cumulative
+        // Calculate period totals by aggregating daily data correctly
+        // Each WooCommerce snapshot contains DAILY sales data
         if (wooSnapshots.length > 0) {
-          aggregatedRevenue = 0;
-          aggregatedOrders = 0;
+          console.log('=== CALCULATING WOO METRICS ===');
+          console.log('Total WooCommerce snapshots:', wooSnapshots.length);
+          console.log('Date range:', dateRange);
 
-          for (const snapshot of wooSnapshots) {
-            const metrics = snapshot.metrics as any;
-            if (metrics.topProducts) {
-              for (const product of metrics.topProducts) {
-                aggregatedRevenue += product.revenue || 0;
-                aggregatedOrders += product.quantity || 0;
+          // For single day filters, use only that day's data (use snapshot totals)
+          if (dateRange === 'today' || dateRange === 'yesterday') {
+            const targetDate = dateRange === 'today' ? today : yesterday;
+            const targetDateStr = targetDate.toISOString().split('T')[0];
+            const daySnapshot = wooSnapshots.find(s => s.date === targetDateStr);
+
+            if (daySnapshot) {
+              const metrics = daySnapshot.metrics as any;
+              console.log(`=== DAY SNAPSHOT FOR ${dateRange.toUpperCase()} ===`);
+              console.log('Snapshot date:', daySnapshot.date);
+              console.log('Full snapshot:', JSON.stringify(daySnapshot, null, 2));
+              console.log('Metrics object:', metrics);
+
+              aggregatedOrders = (metrics?.totalOrders as number) || 0;
+              aggregatedRevenue = (metrics?.totalRevenue as number) || 0;
+              console.log(`=== TOTAL FOR ${dateRange.toUpperCase()}: ${aggregatedOrders} orders, ${aggregatedRevenue} RON ===`);
+            } else {
+              console.log(`No data found for ${dateRange} (${targetDateStr})`);
+              console.log('Available dates in wooSnapshots:', wooSnapshots.map(s => s.date));
+            }
+          } else {
+            // For period filters (month, year), prefer aggregated WooCommerce snapshot if available
+            console.log(`=== PERIOD AGGREGATION FOR ${dateRange.toUpperCase()} ===`);
+            console.log(`Processing ${wooSnapshots.length} snapshots for period aggregation`);
+
+            const isPeriodRange = dateRange === 'this_month' || dateRange === 'last_month' || dateRange === 'this_year';
+
+            // Find the correct aggregated snapshot for this period
+            let aggregateSnapshot = null;
+            if (isPeriodRange && wooAggregateSnapshots.length > 0) {
+              const today = new Date();
+              let expectedAggregateDate: string;
+
+              switch (dateRange) {
+                case 'this_month':
+                  expectedAggregateDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                  break;
+                case 'last_month':
+                  expectedAggregateDate = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0];
+                  break;
+                case 'this_year':
+                  expectedAggregateDate = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+                  break;
+                default:
+                  expectedAggregateDate = '';
+              }
+
+              aggregateSnapshot = wooAggregateSnapshots.find(s => s.date === expectedAggregateDate);
+
+              if (aggregateSnapshot) {
+                const aggMetrics = (aggregateSnapshot as any).metrics as any;
+                console.log('Using WooCommerce aggregated snapshot for period:', {
+                  expectedDate: expectedAggregateDate,
+                  snapshotDate: (aggregateSnapshot as any).date,
+                  totalOrders: aggMetrics?.totalOrders,
+                  totalRevenue: aggMetrics?.totalRevenue,
+                });
+
+                aggregatedOrders = aggMetrics?.totalOrders || 0;
+                aggregatedRevenue = aggMetrics?.totalRevenue || 0;
+
+                // Expose top products from aggregate
+                if (Array.isArray(aggMetrics?.topProducts)) {
+                  aggMetrics.topProducts.forEach((p: any) => {
+                    const key = p.id || p.name;
+                    productMap[key] = {
+                      name: p.name,
+                      quantity: p.quantity || 0,
+                      revenue: p.revenue || 0,
+                    };
+                  });
+                }
               }
             }
-          }
 
-          console.log('PERIOD TOTALS (from topProducts):', {
-            periodRevenue: aggregatedRevenue,
-            periodOrders: aggregatedOrders,
-            snapshots: wooSnapshots.length
-          });
+            // If no aggregated snapshot found for this period, fall back to daily aggregation
+            if (!aggregateSnapshot) {
+              console.log('No aggregated snapshot found for period, falling back to daily aggregation');
+              // Fallback: aggregate across daily snapshots (unique per date)
+              // Group snapshots by date and take the most recent for each date
+              const snapshotsByDate: Record<string, any> = {};
+
+              wooSnapshots.forEach((snapshot) => {
+                const date = snapshot.date;
+                if (!snapshotsByDate[date] ||
+                    new Date((snapshot as any).created_at) > new Date((snapshotsByDate[date] as any).created_at)) {
+                  snapshotsByDate[date] = snapshot;
+                }
+              });
+
+              const uniqueDailySnapshots = Object.values(snapshotsByDate);
+              console.log(`Found ${uniqueDailySnapshots.length} unique dates with WooCommerce data`);
+
+              // Aggregate orders and revenue using snapshot totals (avoid summing product quantities)
+              aggregatedOrders = 0;
+              aggregatedRevenue = 0;
+              uniqueDailySnapshots.forEach((snapshot, index) => {
+                console.log(`Processing date ${index + 1}/${uniqueDailySnapshots.length}: ${(snapshot as any).date}`);
+                const metrics = (snapshot as any).metrics as any;
+
+                // Sum totals directly from snapshot
+                aggregatedOrders += (metrics?.totalOrders || 0);
+                aggregatedRevenue += (metrics?.totalRevenue || 0);
+
+                // Optionally maintain product breakdown for display
+                if (metrics.topProducts && Array.isArray(metrics.topProducts)) {
+                  metrics.topProducts.forEach((product: any) => {
+                    const productId = product.id || product.name;
+                    const revenue = product.revenue || 0;
+                    const quantity = product.quantity || 0;
+                    if (!productMap[productId]) {
+                      productMap[productId] = {
+                        revenue: 0,
+                        quantity: 0,
+                        name: product.name || 'Unknown Product'
+                      };
+                    }
+                    productMap[productId].revenue += revenue;
+                    productMap[productId].quantity += quantity;
+                  });
+                }
+              });
+            }
+
+            console.log(`=== FINAL PERIOD RESULT ===`);
+            console.log(`Period ${dateRange}: ${aggregatedOrders} total orders, ${aggregatedRevenue} RON`);
+            if (Object.keys(productMap).length > 0) {
+              console.log(`From ${Object.keys(productMap).length} unique products (aggregated):`);
+              Object.values(productMap).forEach((product, index) => {
+                console.log(`  ${index + 1}. ${product.name}: ${product.quantity} units, ${product.revenue} RON`);
+              });
+            }
+          }
         }
 
         // Get TODAY's sales directly from topProducts
@@ -452,7 +649,35 @@ export default function ReportsPage() {
           facebookAds,
         });
       } else {
-        console.log('No metrics data found for client');
+        console.log('No metrics data found for client, setting defaults');
+
+        // Set default empty metrics when no data exists for the period
+        setMetrics({
+          totalRevenue: 0,
+          totalOrders: 0,
+          averageOrderValue: 0,
+          totalProducts: 0,
+          completedOrders: 0,
+          processingOrders: 0,
+          pendingOrders: 0,
+          topProducts: [],
+          todayTopProducts: [],
+          yesterdayTopProducts: [],
+          firstDayTopProducts: [],
+          lastDayTopProducts: [],
+          todayRevenue: 0,
+          todayOrders: 0,
+          yesterdayRevenue: 0,
+          yesterdayOrders: 0,
+          firstDayRevenue: 0,
+          firstDayOrders: 0,
+          lastDayRevenue: 0,
+          lastDayOrders: 0,
+          monthlyRevenue: 0,
+          firstDayDate: undefined,
+          lastDayDate: undefined,
+          facebookAds: undefined,
+        });
       }
     } catch (error) {
       console.error('Error fetching metrics:', error);
@@ -482,32 +707,64 @@ export default function ReportsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const syncPromises = integrations.map(async (integration) => {
-        const platformSlug = integration.platform.replace('_', '-');
-        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platformSlug}`;
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            integration_id: integration.id,
-            client_id: integration.client_id,
-          }),
-        });
+      // Define all periods to sync
+      const periodsToSync = [
+        { range: 'today' as const, dateFrom: undefined, dateTo: today.toISOString().split('T')[0] },
+        { range: 'yesterday' as const, dateFrom: undefined, dateTo: yesterday.toISOString().split('T')[0] },
+        {
+          range: 'this_month' as const,
+          dateFrom: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0],
+          dateTo: today.toISOString().split('T')[0]
+        },
+        {
+          range: 'last_month' as const,
+          dateFrom: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0],
+          dateTo: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0]
+        },
+        {
+          range: 'this_year' as const,
+          dateFrom: new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0],
+          dateTo: today.toISOString().split('T')[0]
+        },
+      ];
 
-        if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.error || 'Sync failed');
-        }
+      console.log('Syncing all periods:', periodsToSync.map(p => `${p.range}: ${p.dateFrom || p.dateTo} to ${p.dateTo}`));
 
-        return response.json();
-      });
+      // Sync all periods for all integrations in parallel
+      const allSyncPromises = periodsToSync.flatMap(period =>
+        integrations.map(async (integration) => {
+          const platformSlug = integration.platform.replace('_', '-');
+          const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platformSlug}`;
 
-      await Promise.all(syncPromises);
-      alert('All integrations synced successfully!');
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              integration_id: integration.id,
+              client_id: integration.client_id,
+              date_to: period.dateTo,
+              ...(period.dateFrom && { date_from: period.dateFrom }),
+            }),
+          });
+
+          if (!response.ok) {
+            const result = await response.json();
+            throw new Error(`${integration.platform} ${period.range}: ${result.error || 'Sync failed'}`);
+          }
+
+          return response.json();
+        })
+      );
+
+      await Promise.all(allSyncPromises);
+      alert(`All periods synced successfully! (${periodsToSync.length} periods × ${integrations.length} integrations)`);
 
       if (selectedClient) {
         fetchMetrics(selectedClient.id);
@@ -562,19 +819,22 @@ export default function ReportsPage() {
             <p className="text-sm text-slate-600">Detailed analytics and insights for {selectedClient.name}</p>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 bg-white border border-slate-200 rounded-lg p-1">
-              {(['7d', '30d', '90d'] as const).map((range) => (
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 bg-white border border-slate-200 rounded-md p-0.5">
+              {(['today', 'yesterday', 'this_month', 'last_month', 'this_year'] as const).map((range) => (
                 <button
                   key={range}
                   onClick={() => setDateRange(range)}
-                  className={`px-4 py-2 rounded text-sm font-medium transition ${
+                  className={`px-2 py-1.5 rounded text-xs font-medium transition whitespace-nowrap ${
                     dateRange === range
                       ? 'bg-blue-600 text-white'
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  {range === '7d' ? 'Last 7 days' : range === '30d' ? 'Last 30 days' : 'Last 90 days'}
+                  {range === 'today' ? 'Today' :
+                   range === 'yesterday' ? 'Yesterday' :
+                   range === 'this_month' ? 'This Month' :
+                   range === 'last_month' ? 'Last Month' : 'This Year'}
                 </button>
               ))}
             </div>
@@ -586,7 +846,7 @@ export default function ReportsPage() {
                   const client = clients.find(c => c.id === e.target.value);
                   setSelectedClient(client || null);
                 }}
-                className="px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {clients.map(client => (
                   <option key={client.id} value={client.id}>
@@ -599,25 +859,124 @@ export default function ReportsPage() {
             <button
               onClick={handleSyncAll}
               disabled={syncing || !selectedClient || integrations.length === 0}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium disabled:bg-slate-300 disabled:cursor-not-allowed"
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md transition text-xs font-medium disabled:bg-slate-300 disabled:cursor-not-allowed whitespace-nowrap"
             >
-              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{syncing ? 'Syncing...' : 'Sync Data'}</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              <span>
+                {syncing ? 'Syncing...' : 'Sync All'}
+              </span>
+            </button>
+
+            <button
+              onClick={async () => {
+                if (!selectedClient) return;
+                const confirmMsg = `Are you sure you want to delete history for ${selectedClient.name} in the current range (${dateRange})?`;
+                if (!window.confirm(confirmMsg)) return;
+
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) throw new Error('Not authenticated');
+
+                  // Build date range for current filter
+                  const today = new Date();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(today.getDate() - 1);
+
+                  let dateFrom: string;
+                  let dateTo: string;
+
+                  switch (dateRange) {
+                    case 'today': {
+                      dateFrom = today.toISOString().split('T')[0];
+                      dateTo = dateFrom;
+                      break;
+                    }
+                    case 'yesterday': {
+                      dateFrom = yesterday.toISOString().split('T')[0];
+                      dateTo = dateFrom;
+                      break;
+                    }
+                    case 'this_month': {
+                      const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                      dateFrom = startDate.toISOString().split('T')[0];
+                      dateTo = today.toISOString().split('T')[0];
+                      break;
+                    }
+                    case 'last_month': {
+                      const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                      const endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                      dateFrom = startDate.toISOString().split('T')[0];
+                      dateTo = endDate.toISOString().split('T')[0];
+                      break;
+                    }
+                    case 'this_year': {
+                      const startDate = new Date(today.getFullYear(), 0, 1);
+                      dateFrom = startDate.toISOString().split('T')[0];
+                      dateTo = today.toISOString().split('T')[0];
+                      break;
+                    }
+                    default: {
+                      dateFrom = today.toISOString().split('T')[0];
+                      dateTo = dateFrom;
+                    }
+                  }
+
+                  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-history`;
+                  const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${session.access_token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      client_id: selectedClient.id,
+                      platform: 'woocommerce',
+                      date_from: dateFrom,
+                      date_to: dateTo,
+                    }),
+                  });
+
+                  const result = await response.json();
+                  if (!response.ok) throw new Error(result.error || 'Delete failed');
+                  alert(`Deleted ${result.deleted} snapshots.`);
+                  // Refresh metrics after deletion
+                  fetchMetrics(selectedClient.id);
+                } catch (err: any) {
+                  alert(`Delete failed: ${err.message}`);
+                }
+              }}
+              disabled={!selectedClient}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md transition text-xs font-medium disabled:bg-slate-300 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Delete</span>
             </button>
 
             <button
               onClick={() => setShowShareModal(true)}
               disabled={!selectedClient}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium disabled:bg-slate-300 disabled:cursor-not-allowed"
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition text-xs font-medium disabled:bg-slate-300 disabled:cursor-not-allowed whitespace-nowrap"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share Report</span>
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share</span>
             </button>
           </div>
         </div>
 
         {metrics ? (
           <>
+            {metrics.totalRevenue === 0 && metrics.totalOrders === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">!</span>
+                  </div>
+                  <p className="text-sm text-yellow-800">
+                    No data available for the selected period. Try syncing data or selecting a different time range.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 p-3 mb-3">
               <div className="mb-2">
                 <h2 className="text-base font-bold text-slate-800">WooCommerce Sales</h2>
@@ -643,67 +1002,6 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="bg-white rounded-lg border border-slate-200 p-3">
-                  <div className="mb-2">
-                    <h3 className="text-sm font-bold text-slate-800">Yesterday</h3>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-xs text-slate-600 mb-1">Revenue</p>
-                      <p className="text-xl font-bold text-slate-800">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-600 mb-1">Orders</p>
-                      <p className="text-lg font-semibold text-slate-700">{metrics.yesterdayOrders || 0}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg border border-slate-200 p-3">
-                  <div className="mb-2">
-                    <h3 className="text-sm font-bold text-slate-800">Today</h3>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-xs text-slate-600 mb-1">Revenue</p>
-                      <div className="flex items-baseline space-x-2">
-                        <p className="text-xl font-bold text-slate-800">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
-                        {metrics.yesterdayRevenue !== undefined && metrics.yesterdayRevenue > 0 && metrics.todayRevenue !== undefined && (
-                          <span className={`flex items-center text-xs font-medium ${
-                            metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {metrics.todayRevenue >= metrics.yesterdayRevenue ? (
-                              <ArrowUpRight className="w-3 h-3" />
-                            ) : (
-                              <ArrowDownRight className="w-3 h-3" />
-                            )}
-                            {Math.abs(((metrics.todayRevenue - metrics.yesterdayRevenue) / metrics.yesterdayRevenue) * 100).toFixed(1)}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-600 mb-1">Orders</p>
-                      <div className="flex items-baseline space-x-2">
-                        <p className="text-lg font-semibold text-slate-700">{metrics.todayOrders || 0}</p>
-                        {metrics.yesterdayOrders !== undefined && metrics.yesterdayOrders > 0 && metrics.todayOrders !== undefined && (
-                          <span className={`flex items-center text-xs font-medium ${
-                            metrics.todayOrders >= metrics.yesterdayOrders ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {metrics.todayOrders >= metrics.yesterdayOrders ? (
-                              <ArrowUpRight className="w-3 h-3" />
-                            ) : (
-                              <ArrowDownRight className="w-3 h-3" />
-                            )}
-                            {Math.abs(((metrics.todayOrders - metrics.yesterdayOrders) / metrics.yesterdayOrders) * 100).toFixed(1)}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {metrics.facebookAds && (
@@ -915,33 +1213,34 @@ export default function ReportsPage() {
   );
 }
 
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  trend?: number;
-}
+// TODO: Implement MetricCard component if needed
+// interface MetricCardProps {
+//   title: string;
+//   value: string | number;
+//   icon: React.ElementType;
+//   iconBg: string;
+//   iconColor: string;
+//   trend?: number;
+// }
 
-function MetricCard({ title, value, icon: Icon, iconBg, iconColor, trend }: MetricCardProps) {
-  return (
-    <div className="bg-white rounded-lg border border-slate-200 p-3">
-      {trend !== undefined && (
-        <div className={`flex items-center space-x-1 mb-2 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {trend >= 0 ? (
-            <ArrowUpRight className="w-3 h-3" />
-          ) : (
-            <ArrowDownRight className="w-3 h-3" />
-          )}
-          <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
-        </div>
-      )}
-      <p className="text-xs text-slate-600 mb-1">{title}</p>
-      <p className="text-xl font-bold text-slate-800">{value}</p>
-    </div>
-  );
-}
+// function MetricCard({ title, value, icon: Icon, iconBg, iconColor, trend }: MetricCardProps) {
+//   return (
+//     <div className="bg-white rounded-lg border border-slate-200 p-3">
+//       {trend !== undefined && (
+//         <div className={`flex items-center space-x-1 mb-2 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+//           {trend >= 0 ? (
+//             <ArrowUpRight className="w-3 h-3" />
+//           ) : (
+//             <ArrowDownRight className="w-3 h-3" />
+//           )}
+//           <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
+//         </div>
+//       )}
+//       <p className="text-xs text-slate-600 mb-1">{title}</p>
+//       <p className="text-xl font-bold text-slate-800">{value}</p>
+//     </div>
+//   );
+// }
 
 interface ShareModalProps {
   clientId: string;
@@ -1033,9 +1332,10 @@ function ShareModal({ clientId, clientName, onClose }: ShareModalProps) {
 
     if (!error) {
       await fetchActiveLinks();
-      if (activeLinks.find(l => l.id === linkId)?.token && generatedLink.includes(activeLinks.find(l => l.id === linkId)!.token)) {
-        setGeneratedLink('');
-      }
+      // TODO: Implement link cleanup logic
+      // if (activeLinks.find(l => l.id === linkId)?.token && generatedLink.includes(activeLinks.find(l => l.id === linkId)!.token)) {
+      //   setGeneratedLink('');
+      // }
     }
   };
 

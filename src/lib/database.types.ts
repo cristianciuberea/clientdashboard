@@ -286,6 +286,35 @@ export interface Database {
           updated_at?: string
         }
       }
+      report_shares: {
+        Row: {
+          id: string
+          client_id: string
+          token: string
+          expires_at: string | null
+          created_at: string
+          last_accessed_at: string | null
+          access_count: number
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          token: string
+          expires_at?: string | null
+          created_at?: string
+          last_accessed_at?: string | null
+          access_count?: number
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          token?: string
+          expires_at?: string | null
+          created_at?: string
+          last_accessed_at?: string | null
+          access_count?: number
+        }
+      }
     }
   }
 }
