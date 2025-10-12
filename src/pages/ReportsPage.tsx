@@ -105,10 +105,6 @@ export default function ReportsPage() {
       // String versions for comparison with snapshot.date (use local timezone, not UTC)
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-      
-      console.log('=== DATE STRINGS FOR COMPARISON ===');
-      console.log('todayStr:', todayStr);
-      console.log('yesterdayStr:', yesterdayStr);
 
       let startDate: Date;
       let endDate: Date = new Date();
@@ -139,11 +135,6 @@ export default function ReportsPage() {
           startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       }
 
-      console.log('=== FETCH METRICS ===');
-      console.log('dateRange:', dateRange);
-      console.log('startDate:', startDate.toISOString().split('T')[0]);
-      console.log('endDate:', endDate.toISOString().split('T')[0]);
-      console.log('Date range filter active:', { gte: startDate.toISOString().split('T')[0], lte: endDate.toISOString().split('T')[0] });
 
       // First, get ALL available snapshots for this client
       const { data: allData, error: allError } = await supabase
@@ -157,15 +148,6 @@ export default function ReportsPage() {
         throw allError;
       }
 
-      console.log('=== ALL AVAILABLE DATA ===');
-      console.log('Total snapshots in DB:', allData?.length || 0);
-      if (allData && allData.length > 0) {
-        console.log('Date range in DB:', {
-          earliest: allData[allData.length - 1]?.date,
-          latest: allData[0]?.date
-        });
-        console.log('All dates:', allData.map(s => s.date));
-      }
 
       // Now filter the data in JavaScript based on our date range
       // Build date strings manually to avoid timezone issues
@@ -179,22 +161,8 @@ export default function ReportsPage() {
       const endDay = String(endDate.getDate()).padStart(2, '0');
       const endDateStr = `${endYear}-${endMonth}-${endDay}`;
 
-      console.log('Filtering with LOCAL date strings:', startDateStr, 'to', endDateStr);
-      console.log('Raw startDate object:', startDate, 'Raw endDate object:', endDate);
-
       const data = allData?.filter(snapshot => {
-        const result = snapshot.date >= startDateStr && snapshot.date <= endDateStr;
-        if (result) {
-          console.log('Including snapshot:', snapshot.date, snapshot.platform);
-        }
-        return result;
-      });
-
-      console.log('=== FILTERED DATA ===');
-      console.log('Filtered snapshots:', data?.length || 0);
-      console.log('Filter criteria:', {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
+        return snapshot.date >= startDateStr && snapshot.date <= endDateStr;
       });
 
       const error = null; // No error since we filtered client-side
@@ -218,7 +186,6 @@ export default function ReportsPage() {
         }
 
         const uniqueSnapshots = Object.values(latestByDatePlatform);
-        console.log('Unique snapshots after deduplication:', uniqueSnapshots.length, 'by platform:',
           uniqueSnapshots.reduce((acc, s) => { acc[s.platform] = (acc[s.platform] || 0) + 1; return acc; }, {} as Record<string, number>));
 
         let aggregatedRevenue = 0;
@@ -254,17 +221,10 @@ export default function ReportsPage() {
           (s) => (s.platform === 'woocommerce' || s.platform === 'wordpress') && (s as any).metric_type !== 'ecommerce_aggregate'
         );
 
-        console.log('WooCommerce aggregate snapshots:', wooAggregateSnapshots.length);
-        wooAggregateSnapshots.forEach(s => console.log('Aggregate snapshot:', s.date, (s as any).metric_type, (s.metrics as any)?.totalOrders));
 
         if (sortedSnapshots.length > 0) {
           firstDayDate = sortedSnapshots[0].date;
           lastDayDate = sortedSnapshots[sortedSnapshots.length - 1].date;
-          console.log('firstDayDate:', firstDayDate);
-          console.log('lastDayDate:', lastDayDate);
-          console.log('Total unique snapshots:', sortedSnapshots.length);
-          console.log('WooCommerce snapshots:', wooSnapshots.length);
-          console.log('Facebook Ads snapshots:', sortedSnapshots.filter(s => s.platform === 'facebook_ads').length);
         }
 
         const fbDailyData: { [date: string]: any } = {};
@@ -311,12 +271,10 @@ export default function ReportsPage() {
                 cpc: snapshotMetrics.cpc || 0,
                 cpm: snapshotMetrics.cpm || 0
               };
-              console.log('Found FB data for', snapshot.date, fbDailyData[snapshot.date]);
             }
           } else {
             // For WooCommerce/WordPress, store last day snapshot data
             if (snapshot.date === lastDayDate) {
-              console.log('Using lastDayDate snapshot:', snapshot.date, snapshotMetrics);
               completedOrders = snapshotMetrics.completedOrders || 0;
               processingOrders = snapshotMetrics.processingOrders || 0;
               pendingOrders = snapshotMetrics.pendingOrders || 0;
@@ -403,18 +361,10 @@ export default function ReportsPage() {
 
         // Get unique dates from WooCommerce snapshots
         const uniqueDates = Array.from(new Set(wooSnapshots.map(s => s.date))).sort();
-        console.log('=== WOOCOMMERCE PERIOD CALCULATION ===');
-        console.log('Unique dates:', uniqueDates);
-        console.log('Date range:', dateRange);
-        console.log('Today:', today);
-        console.log('Yesterday:', yesterday);
 
         // Calculate period totals by aggregating daily data correctly
         // Each WooCommerce snapshot contains DAILY sales data
         if (wooSnapshots.length > 0) {
-          console.log('=== CALCULATING WOO METRICS ===');
-          console.log('Total WooCommerce snapshots:', wooSnapshots.length);
-          console.log('Date range:', dateRange);
 
           // For single day filters, use only that day's data (use snapshot totals)
           if (dateRange === 'today' || dateRange === 'yesterday') {
@@ -424,22 +374,13 @@ export default function ReportsPage() {
 
             if (daySnapshot) {
               const metrics = daySnapshot.metrics as any;
-              console.log(`=== DAY SNAPSHOT FOR ${dateRange.toUpperCase()} ===`);
-              console.log('Snapshot date:', daySnapshot.date);
-              console.log('Full snapshot:', JSON.stringify(daySnapshot, null, 2));
-              console.log('Metrics object:', metrics);
 
               aggregatedOrders = (metrics?.totalOrders as number) || 0;
               aggregatedRevenue = (metrics?.totalRevenue as number) || 0;
-              console.log(`=== TOTAL FOR ${dateRange.toUpperCase()}: ${aggregatedOrders} orders, ${aggregatedRevenue} RON ===`);
             } else {
-              console.log(`No data found for ${dateRange} (${targetDateStr})`);
-              console.log('Available dates in wooSnapshots:', wooSnapshots.map(s => s.date));
             }
           } else {
             // For period filters (month, year), prefer aggregated WooCommerce snapshot if available
-            console.log(`=== PERIOD AGGREGATION FOR ${dateRange.toUpperCase()} ===`);
-            console.log(`Processing ${wooSnapshots.length} snapshots for period aggregation`);
 
             const isPeriodRange = dateRange === 'this_month' || dateRange === 'last_month' || dateRange === 'this_year';
 
@@ -467,7 +408,6 @@ export default function ReportsPage() {
 
               if (aggregateSnapshot) {
                 const aggMetrics = (aggregateSnapshot as any).metrics as any;
-                console.log('Using WooCommerce aggregated snapshot for period:', {
                   expectedDate: expectedAggregateDate,
                   snapshotDate: (aggregateSnapshot as any).date,
                   totalOrders: aggMetrics?.totalOrders,
@@ -493,7 +433,6 @@ export default function ReportsPage() {
 
             // If no aggregated snapshot found for this period, fall back to daily aggregation
             if (!aggregateSnapshot) {
-              console.log('No aggregated snapshot found for period, falling back to daily aggregation');
               // Fallback: aggregate across daily snapshots (unique per date)
               // Group snapshots by date and take the most recent for each date
               const snapshotsByDate: Record<string, any> = {};
@@ -507,13 +446,11 @@ export default function ReportsPage() {
               });
 
               const uniqueDailySnapshots = Object.values(snapshotsByDate);
-              console.log(`Found ${uniqueDailySnapshots.length} unique dates with WooCommerce data`);
 
               // Aggregate orders and revenue using snapshot totals (avoid summing product quantities)
               aggregatedOrders = 0;
               aggregatedRevenue = 0;
               uniqueDailySnapshots.forEach((snapshot, index) => {
-                console.log(`Processing date ${index + 1}/${uniqueDailySnapshots.length}: ${(snapshot as any).date}`);
                 const metrics = (snapshot as any).metrics as any;
 
                 // Sum totals directly from snapshot
@@ -540,12 +477,8 @@ export default function ReportsPage() {
               });
             }
 
-            console.log(`=== FINAL PERIOD RESULT ===`);
-            console.log(`Period ${dateRange}: ${aggregatedOrders} total orders, ${aggregatedRevenue} RON`);
             if (Object.keys(productMap).length > 0) {
-              console.log(`From ${Object.keys(productMap).length} unique products (aggregated):`);
               Object.values(productMap).forEach((product, index) => {
-                console.log(`  ${index + 1}. ${product.name}: ${product.quantity} units, ${product.revenue} RON`);
               });
             }
           }
@@ -559,7 +492,6 @@ export default function ReportsPage() {
             calculatedTodayRevenue += (metrics?.totalRevenue || 0);
             calculatedTodayOrders += (metrics?.totalOrders || 0);
           });
-          console.log('TODAY sales:', {
             date: today,
             snapshots: todaySnapshots.length,
             revenue: calculatedTodayRevenue,
@@ -568,17 +500,13 @@ export default function ReportsPage() {
         }
 
         // Get YESTERDAY's sales by summing ALL snapshots for yesterday
-        console.log('Looking for yesterday snapshots with date:', yesterdayStr);
-        console.log('Available WooCommerce snapshot dates:', wooSnapshots.map(s => s.date));
         const yesterdaySnapshots = wooSnapshots.filter(s => s.date === yesterdayStr);
-        console.log('Found yesterday snapshots:', yesterdaySnapshots.length);
         if (yesterdaySnapshots.length > 0) {
           yesterdaySnapshots.forEach(snapshot => {
             const metrics = snapshot.metrics as any;
             calculatedYesterdayRevenue += (metrics?.totalRevenue || 0);
             calculatedYesterdayOrders += (metrics?.totalOrders || 0);
           });
-          console.log('YESTERDAY sales:', {
             date: yesterday,
             snapshots: yesterdaySnapshots.length,
             revenue: calculatedYesterdayRevenue,
@@ -586,7 +514,6 @@ export default function ReportsPage() {
           });
         }
 
-        console.log('Final calculated values:', {
           calculatedTodayRevenue,
           calculatedTodayOrders,
           calculatedYesterdayRevenue,
@@ -606,7 +533,6 @@ export default function ReportsPage() {
           : Object.entries(fbDailyData);
 
         for (const [date, dayData] of fbDatesToInclude) {
-          console.log(`Including FB data for ${date}:`, dayData);
           fbSpend += dayData.spend;
           fbImpressions += dayData.impressions;
           fbClicks += dayData.clicks;
@@ -625,12 +551,10 @@ export default function ReportsPage() {
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
 
-        console.log('Facebook Ads (from daily data):', {
           fbDailyData,
           totals: facebookAds
         });
 
-        console.log('Aggregated metrics:', { aggregatedRevenue, aggregatedOrders, topProducts, facebookAds });
 
         setMetrics({
           totalRevenue: aggregatedRevenue,
@@ -659,7 +583,6 @@ export default function ReportsPage() {
           facebookAds,
         });
       } else {
-        console.log('No metrics data found for client, setting defaults');
 
         // Set default empty metrics when no data exists for the period
         setMetrics({
@@ -744,7 +667,6 @@ export default function ReportsPage() {
         },
       ];
 
-      console.log('Syncing all periods:', periodsToSync.map(p => `${p.range}: ${p.dateFrom || p.dateTo} to ${p.dateTo}`));
 
       // Sync all periods for all integrations in parallel
       const allSyncPromises = periodsToSync.flatMap(period =>
@@ -759,7 +681,6 @@ export default function ReportsPage() {
             ...(period.dateFrom && { date_from: period.dateFrom }),
           };
 
-          console.log(`[${period.range}] Sending request:`, payload);
 
           const response = await fetch(apiUrl, {
             method: 'POST',
@@ -777,7 +698,6 @@ export default function ReportsPage() {
           }
 
           const result = await response.json();
-          console.log(`[${period.range}] Sync success:`, result);
           return result;
         })
       );
@@ -1006,7 +926,6 @@ export default function ReportsPage() {
                 <div className="bg-white rounded-lg border border-slate-200 p-2">
                   <p className="text-xs text-slate-600 mb-1">Total Revenue</p>
                   <p className="text-lg font-bold text-slate-800">{metrics.totalRevenue.toLocaleString()} RON</p>
-                  {console.log('Debug comparison:', { dateRange, yesterdayRevenue: metrics.yesterdayRevenue, yesterdayOrders: metrics.yesterdayOrders })}
                   {dateRange === 'today' && metrics.yesterdayRevenue !== undefined && (
                     <p className={`text-xs mt-1 font-medium ${
                       metrics.totalRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
