@@ -36,6 +36,10 @@ Deno.serve(async (req: Request) => {
       throw new Error('Missing required parameters: integration_id, client_id');
     }
 
+    const isRangeQuery = date_from && date_to && date_from !== date_to;
+    const metricType = isRangeQuery ? 'ecommerce_aggregate' : 'ecommerce';
+    const snapshotDate = isRangeQuery ? date_from : (date_to || new Date().toISOString().split('T')[0]);
+
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integrations')
       .select('*')
@@ -59,27 +63,14 @@ Deno.serve(async (req: Request) => {
 
     const allowedStatuses = config?.order_statuses || ['processing', 'completed', 'on-hold', 'pending', 'cancelled', 'refunded', 'failed'];
 
-    const today = new Date().toISOString().split('T')[0];
-    const targetDate = date_to || today;
-
-    console.log(`Syncing WooCommerce data for date: ${targetDate}`);
-    console.log(`Date range: from ${date_from || targetDate} to ${targetDate}`);
-
-    // Determine if this is a single day sync or range sync
-    const isRangeSync = date_from && date_from !== targetDate;
-    const startDate = date_from || targetDate;
-    const endDate = targetDate;
-
-    console.log(`Is range sync: ${isRangeSync}, start: ${startDate}, end: ${endDate}`);
-
     const auth = btoa(`${consumerKey}:${consumerSecret}`);
     const headers = {
       'Authorization': `Basic ${auth}`,
       'Content-Type': 'application/json',
     };
 
-    const startDateTime = `${startDate}T00:00:00`;
-    const endDateTime = `${endDate}T23:59:59`;
+    const startDateTime = isRangeQuery ? `${date_from}T00:00:00` : `${snapshotDate}T00:00:00`;
+    const endDateTime = isRangeQuery ? `${date_to}T23:59:59` : `${snapshotDate}T23:59:59`;
 
     let allOrders: any[] = [];
     let page = 1;
@@ -125,11 +116,7 @@ Deno.serve(async (req: Request) => {
       totalProducts = products.length;
     }
 
-    // For range sync, save aggregated metrics with date = startDate (to avoid conflicts with daily snapshots)
-    // For single day sync, save metrics for that specific day
-    const snapshotDate = isRangeSync ? startDate : targetDate;
-
-    console.log(`Saving snapshot for date: ${snapshotDate} (${isRangeSync ? 'range' : 'single day'}) with metric_type: ${isRangeSync ? 'ecommerce_aggregate' : 'ecommerce'}`);
+    console.log(`Saving snapshot for date: ${snapshotDate} (${isRangeQuery ? 'range' : 'single day'}) with metric_type: ${metricType}`);
 
     let totalRevenue = 0;
     let completedOrders = 0;
@@ -229,7 +216,7 @@ Deno.serve(async (req: Request) => {
         client_id,
         integration_id,
         platform: 'woocommerce',
-        metric_type: isRangeSync ? 'ecommerce_aggregate' : 'ecommerce',
+        metric_type: metricType,
         date: snapshotDate,
         metrics: metrics,
       });
