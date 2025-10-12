@@ -101,6 +101,10 @@ export default function ReportsPage() {
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
+      
+      // String versions for comparison with snapshot.date
+      const todayStr = today.toISOString().split('T')[0];
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
 
       let startDate: Date;
       let endDate: Date = new Date();
@@ -274,10 +278,10 @@ export default function ReportsPage() {
             }
           }
 
-          if (snapshot.date === today) {
+          if (snapshot.date === todayStr) {
             todayMetric = snapshotMetrics;
           }
-          if (snapshot.date === yesterday) {
+          if (snapshot.date === yesterdayStr) {
             yesterdayMetric = snapshotMetrics;
           }
           if (snapshot.date === firstDayDate) {
@@ -323,7 +327,7 @@ export default function ReportsPage() {
             }
           }
 
-          if (snapshot.date === today && snapshotMetrics.topProducts) {
+          if (snapshot.date === todayStr && snapshotMetrics.topProducts) {
             for (const product of snapshotMetrics.topProducts) {
               if (!todayProductMap[product.name]) {
                 todayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
@@ -333,7 +337,7 @@ export default function ReportsPage() {
             }
           }
 
-          if (snapshot.date === yesterday && snapshotMetrics.topProducts) {
+          if (snapshot.date === yesterdayStr && snapshotMetrics.topProducts) {
             for (const product of snapshotMetrics.topProducts) {
               if (!yesterdayProductMap[product.name]) {
                 yesterdayProductMap[product.name] = { name: product.name, quantity: 0, revenue: 0 };
@@ -541,7 +545,7 @@ export default function ReportsPage() {
         }
 
         // Get TODAY's sales by summing ALL snapshots for today
-        const todaySnapshots = wooSnapshots.filter(s => s.date === today);
+        const todaySnapshots = wooSnapshots.filter(s => s.date === todayStr);
         if (todaySnapshots.length > 0) {
           todaySnapshots.forEach(snapshot => {
             const metrics = snapshot.metrics as any;
@@ -557,7 +561,7 @@ export default function ReportsPage() {
         }
 
         // Get YESTERDAY's sales by summing ALL snapshots for yesterday
-        const yesterdaySnapshots = wooSnapshots.filter(s => s.date === yesterday);
+        const yesterdaySnapshots = wooSnapshots.filter(s => s.date === yesterdayStr);
         if (yesterdaySnapshots.length > 0) {
           yesterdaySnapshots.forEach(snapshot => {
             const metrics = snapshot.metrics as any;
