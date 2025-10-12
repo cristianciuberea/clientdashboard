@@ -320,28 +320,57 @@ export default function ReportsPage() {
         let calculatedTodayRevenue = 0;
         let calculatedTodayOrders = 0;
 
-        if (wooSnapshots.length >= 2) {
-          // Get last two days of data
-          const lastSnapshot = wooSnapshots[wooSnapshots.length - 1].metrics as any;
-          const secondLastSnapshot = wooSnapshots[wooSnapshots.length - 2].metrics as any;
+        // Get unique dates from WooCommerce snapshots
+        const uniqueDates = Array.from(new Set(wooSnapshots.map(s => s.date))).sort();
+        console.log('Unique WooCommerce dates:', uniqueDates);
 
-          // Today's revenue/orders = difference between last and second-last
-          calculatedTodayRevenue = (lastSnapshot.totalRevenue || 0) - (secondLastSnapshot.totalRevenue || 0);
-          calculatedTodayOrders = (lastSnapshot.totalOrders || 0) - (secondLastSnapshot.totalOrders || 0);
+        if (uniqueDates.length >= 2) {
+          const lastDate = uniqueDates[uniqueDates.length - 1];
+          const secondLastDate = uniqueDates[uniqueDates.length - 2];
 
-          if (wooSnapshots.length >= 3) {
-            const thirdLastSnapshot = wooSnapshots[wooSnapshots.length - 3].metrics as any;
-            // Yesterday's revenue/orders = difference between second-last and third-last
-            calculatedYesterdayRevenue = (secondLastSnapshot.totalRevenue || 0) - (thirdLastSnapshot.totalRevenue || 0);
-            calculatedYesterdayOrders = (secondLastSnapshot.totalOrders || 0) - (thirdLastSnapshot.totalOrders || 0);
+          const lastSnapshot = wooSnapshots.find(s => s.date === lastDate);
+          const secondLastSnapshot = wooSnapshots.find(s => s.date === secondLastDate);
+
+          if (lastSnapshot && secondLastSnapshot) {
+            const lastMetrics = lastSnapshot.metrics as any;
+            const secondLastMetrics = secondLastSnapshot.metrics as any;
+
+            // Today's revenue/orders = difference between last and second-last
+            calculatedTodayRevenue = (lastMetrics.totalRevenue || 0) - (secondLastMetrics.totalRevenue || 0);
+            calculatedTodayOrders = (lastMetrics.totalOrders || 0) - (secondLastMetrics.totalOrders || 0);
+
+            console.log('Today calculation:', {
+              lastDate,
+              lastRevenue: lastMetrics.totalRevenue,
+              secondLastDate,
+              secondLastRevenue: secondLastMetrics.totalRevenue,
+              calculatedTodayRevenue,
+              calculatedTodayOrders
+            });
           }
 
-          console.log('Calculated daily metrics:', {
-            calculatedTodayRevenue,
-            calculatedTodayOrders,
-            calculatedYesterdayRevenue,
-            calculatedYesterdayOrders
-          });
+          if (uniqueDates.length >= 3) {
+            const thirdLastDate = uniqueDates[uniqueDates.length - 3];
+            const thirdLastSnapshot = wooSnapshots.find(s => s.date === thirdLastDate);
+
+            if (secondLastSnapshot && thirdLastSnapshot) {
+              const secondLastMetrics = secondLastSnapshot.metrics as any;
+              const thirdLastMetrics = thirdLastSnapshot.metrics as any;
+
+              // Yesterday's revenue/orders = difference between second-last and third-last
+              calculatedYesterdayRevenue = (secondLastMetrics.totalRevenue || 0) - (thirdLastMetrics.totalRevenue || 0);
+              calculatedYesterdayOrders = (secondLastMetrics.totalOrders || 0) - (thirdLastMetrics.totalOrders || 0);
+
+              console.log('Yesterday calculation:', {
+                secondLastDate,
+                secondLastRevenue: secondLastMetrics.totalRevenue,
+                thirdLastDate,
+                thirdLastRevenue: thirdLastMetrics.totalRevenue,
+                calculatedYesterdayRevenue,
+                calculatedYesterdayOrders
+              });
+            }
+          }
         }
 
         console.log('Aggregated metrics:', { aggregatedRevenue, aggregatedOrders, topProducts, facebookAds });
@@ -570,62 +599,69 @@ export default function ReportsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-              <div className="bg-white rounded-xl border border-slate-200 p-3">
-                <div className="mb-2">
-                  <h3 className="text-base font-bold text-slate-800">Yesterday</h3>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-slate-600 mb-1">Revenue</p>
-                    <p className="text-xl font-bold text-slate-800">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-600 mb-1">Orders</p>
-                    <p className="text-lg font-semibold text-slate-700">{metrics.yesterdayOrders || 0}</p>
-                  </div>
-                </div>
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 p-3 mb-3">
+              <div className="mb-2">
+                <h2 className="text-base font-bold text-slate-800">WooCommerce Sales</h2>
+                <p className="text-xs text-slate-600">Daily revenue comparison</p>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-3">
-                <div className="mb-2">
-                  <h3 className="text-base font-bold text-slate-800">Today</h3>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-slate-600 mb-1">Revenue</p>
-                    <div className="flex items-baseline space-x-2">
-                      <p className="text-xl font-bold text-slate-800">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
-                      {metrics.yesterdayRevenue !== undefined && metrics.yesterdayRevenue > 0 && metrics.todayRevenue !== undefined && (
-                        <span className={`flex items-center text-xs font-medium ${
-                          metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {metrics.todayRevenue >= metrics.yesterdayRevenue ? (
-                            <ArrowUpRight className="w-3 h-3" />
-                          ) : (
-                            <ArrowDownRight className="w-3 h-3" />
-                          )}
-                          {Math.abs(((metrics.todayRevenue - metrics.yesterdayRevenue) / metrics.yesterdayRevenue) * 100).toFixed(1)}%
-                        </span>
-                      )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="bg-white rounded-lg border border-slate-200 p-3">
+                  <div className="mb-2">
+                    <h3 className="text-sm font-bold text-slate-800">Yesterday</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Revenue</p>
+                      <p className="text-xl font-bold text-slate-800">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Orders</p>
+                      <p className="text-lg font-semibold text-slate-700">{metrics.yesterdayOrders || 0}</p>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-600 mb-1">Orders</p>
-                    <div className="flex items-baseline space-x-2">
-                      <p className="text-lg font-semibold text-slate-700">{metrics.todayOrders || 0}</p>
-                      {metrics.yesterdayOrders !== undefined && metrics.yesterdayOrders > 0 && metrics.todayOrders !== undefined && (
-                        <span className={`flex items-center text-xs font-medium ${
-                          metrics.todayOrders >= metrics.yesterdayOrders ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {metrics.todayOrders >= metrics.yesterdayOrders ? (
-                            <ArrowUpRight className="w-3 h-3" />
-                          ) : (
-                            <ArrowDownRight className="w-3 h-3" />
-                          )}
-                          {Math.abs(((metrics.todayOrders - metrics.yesterdayOrders) / metrics.yesterdayOrders) * 100).toFixed(1)}%
-                        </span>
-                      )}
+                </div>
+
+                <div className="bg-white rounded-lg border border-slate-200 p-3">
+                  <div className="mb-2">
+                    <h3 className="text-sm font-bold text-slate-800">Today</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Revenue</p>
+                      <div className="flex items-baseline space-x-2">
+                        <p className="text-xl font-bold text-slate-800">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
+                        {metrics.yesterdayRevenue !== undefined && metrics.yesterdayRevenue > 0 && metrics.todayRevenue !== undefined && (
+                          <span className={`flex items-center text-xs font-medium ${
+                            metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {metrics.todayRevenue >= metrics.yesterdayRevenue ? (
+                              <ArrowUpRight className="w-3 h-3" />
+                            ) : (
+                              <ArrowDownRight className="w-3 h-3" />
+                            )}
+                            {Math.abs(((metrics.todayRevenue - metrics.yesterdayRevenue) / metrics.yesterdayRevenue) * 100).toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Orders</p>
+                      <div className="flex items-baseline space-x-2">
+                        <p className="text-lg font-semibold text-slate-700">{metrics.todayOrders || 0}</p>
+                        {metrics.yesterdayOrders !== undefined && metrics.yesterdayOrders > 0 && metrics.todayOrders !== undefined && (
+                          <span className={`flex items-center text-xs font-medium ${
+                            metrics.todayOrders >= metrics.yesterdayOrders ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {metrics.todayOrders >= metrics.yesterdayOrders ? (
+                              <ArrowUpRight className="w-3 h-3" />
+                            ) : (
+                              <ArrowDownRight className="w-3 h-3" />
+                            )}
+                            {Math.abs(((metrics.todayOrders - metrics.yesterdayOrders) / metrics.yesterdayOrders) * 100).toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
