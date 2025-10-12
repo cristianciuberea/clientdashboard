@@ -28,7 +28,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { integrationId } = await req.json();
+    const body = await req.json();
+    const integrationId = body.integrationId || body.integration_id;
 
     if (!integrationId) {
       throw new Error('Integration ID is required');
