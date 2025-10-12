@@ -65,15 +65,36 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
     };
 
-    const ordersUrl = `${storeUrl}/wp-json/wc/v3/orders?after=${targetDate}T00:00:00&before=${targetDate}T23:59:59&per_page=100`;
-    const ordersResponse = await fetch(ordersUrl, { headers });
+    const startDateTime = `${targetDate}T00:00:00`;
+    const endDateTime = `${targetDate}T23:59:59`;
 
-    if (!ordersResponse.ok) {
-      const errorText = await ordersResponse.text();
-      throw new Error(`WooCommerce API error: ${errorText}`);
+    let allOrders: any[] = [];
+    let page = 1;
+    let hasMorePages = true;
+
+    while (hasMorePages) {
+      const ordersUrl = `${storeUrl}/wp-json/wc/v3/orders?after=${startDateTime}&before=${endDateTime}&per_page=100&page=${page}`;
+      const ordersResponse = await fetch(ordersUrl, { headers });
+
+      if (!ordersResponse.ok) {
+        const errorText = await ordersResponse.text();
+        throw new Error(`WooCommerce API error: ${errorText}`);
+      }
+
+      const pageOrders = await ordersResponse.json();
+
+      if (pageOrders.length === 0) {
+        hasMorePages = false;
+      } else {
+        allOrders = allOrders.concat(pageOrders);
+        page++;
+        if (pageOrders.length < 100) {
+          hasMorePages = false;
+        }
+      }
     }
 
-    const orders = await ordersResponse.json();
+    const orders = allOrders;
 
     const productsUrl = `${storeUrl}/wp-json/wc/v3/products?per_page=100`;
     const productsResponse = await fetch(productsUrl, { headers });

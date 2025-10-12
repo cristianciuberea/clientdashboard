@@ -243,53 +243,78 @@ export default function SharedReportPage({ token }: SharedReportPageProps) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl p-8 text-white">
-          <h2 className="text-3xl font-bold mb-2">Performance Overview</h2>
-          <p className="text-blue-100">Last 30 days of marketing data</p>
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl p-6 text-white">
+          <h2 className="text-2xl font-bold mb-1">Performance Overview</h2>
+          <p className="text-sm text-blue-100">Last 30 days of marketing data</p>
         </div>
 
-        {metrics.facebookAds.spend > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">Facebook Ads</h3>
-                <p className="text-sm text-slate-500">Advertising performance metrics</p>
-              </div>
-            </div>
+        {(metrics.woocommerce.totalOrders > 0 || metrics.facebookAds.spend > 0) && (
+          <div className="grid lg:grid-cols-2 gap-4">
+            {metrics.woocommerce.totalOrders > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 p-5">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <ShoppingCart className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">E-commerce</h3>
+                    <p className="text-xs text-slate-500">WooCommerce sales</p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <MetricBox label="Total Spend" value={`${metrics.facebookAds.spend.toFixed(2)} RON`} />
-              <MetricBox label="Revenue" value={`${metrics.facebookAds.revenue.toFixed(2)} RON`} />
-              <MetricBox label="Impressions" value={metrics.facebookAds.impressions.toLocaleString()} />
-              <MetricBox label="Clicks" value={metrics.facebookAds.clicks.toLocaleString()} />
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <MetricBox label="Total Orders" value={metrics.woocommerce.totalOrders.toLocaleString()} />
+                  <MetricBox label="Revenue" value={`${metrics.woocommerce.totalRevenue.toFixed(2)} RON`} highlighted />
+                  <MetricBox label="Avg. Order" value={`${metrics.woocommerce.averageOrderValue.toFixed(2)} RON`} />
+                  <MetricBox label="Completed" value={metrics.woocommerce.completedOrders.toLocaleString()} />
+                </div>
+              </div>
+            )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricBox label="CTR" value={`${metrics.facebookAds.ctr.toFixed(2)}%`} />
-              <MetricBox label="CPC" value={`${metrics.facebookAds.cpc.toFixed(2)} RON`} />
-              <MetricBox label="CPM" value={`${metrics.facebookAds.cpm.toFixed(2)} RON`} />
-              <MetricBox label="ROAS" value={`${metrics.facebookAds.roas.toFixed(2)}x`} highlighted />
-            </div>
+            {metrics.facebookAds.spend > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 p-5">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Facebook Ads</h3>
+                    <p className="text-xs text-slate-500">Advertising performance</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <MetricBox label="Spend" value={`${metrics.facebookAds.spend.toFixed(2)} RON`} />
+                  <MetricBox label="Revenue" value={`${metrics.facebookAds.revenue.toFixed(2)} RON`} />
+                  <MetricBox label="Impressions" value={metrics.facebookAds.impressions.toLocaleString()} />
+                  <MetricBox label="Clicks" value={metrics.facebookAds.clicks.toLocaleString()} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <MetricBox label="CTR" value={`${metrics.facebookAds.ctr.toFixed(2)}%`} />
+                  <MetricBox label="CPC" value={`${metrics.facebookAds.cpc.toFixed(2)} RON`} />
+                  <MetricBox label="CPM" value={`${metrics.facebookAds.cpm.toFixed(2)} RON`} />
+                  <MetricBox label="ROAS" value={`${metrics.facebookAds.roas.toFixed(2)}x`} highlighted />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {metrics.googleAnalytics.sessions > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-orange-600" />
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Website Analytics</h3>
-                <p className="text-sm text-slate-500">Google Analytics data</p>
+                <h3 className="text-lg font-bold text-slate-800">Website Analytics</h3>
+                <p className="text-xs text-slate-500">Google Analytics data</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <MetricBox label="Sessions" value={metrics.googleAnalytics.sessions.toLocaleString()} />
               <MetricBox label="Users" value={metrics.googleAnalytics.users.toLocaleString()} />
               <MetricBox label="Page Views" value={metrics.googleAnalytics.pageviews.toLocaleString()} />
@@ -299,41 +324,20 @@ export default function SharedReportPage({ token }: SharedReportPageProps) {
           </div>
         )}
 
-        {metrics.woocommerce.totalOrders > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">E-commerce</h3>
-                <p className="text-sm text-slate-500">WooCommerce sales data</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricBox label="Total Orders" value={metrics.woocommerce.totalOrders.toLocaleString()} />
-              <MetricBox label="Revenue" value={`${metrics.woocommerce.totalRevenue.toFixed(2)} RON`} highlighted />
-              <MetricBox label="Avg. Order Value" value={`${metrics.woocommerce.averageOrderValue.toFixed(2)} RON`} />
-              <MetricBox label="Completed" value={metrics.woocommerce.completedOrders.toLocaleString()} />
-            </div>
-          </div>
-        )}
-
         {metrics.mailerlite.totalSubscribers > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Mail className="w-6 h-6 text-purple-600" />
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                <Mail className="w-5 h-5 text-teal-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Email Marketing</h3>
-                <p className="text-sm text-slate-500">MailerLite campaign performance</p>
+                <h3 className="text-lg font-bold text-slate-800">Email Marketing</h3>
+                <p className="text-xs text-slate-500">MailerLite campaigns</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricBox label="Total Subscribers" value={metrics.mailerlite.totalSubscribers.toLocaleString()} />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MetricBox label="Subscribers" value={metrics.mailerlite.totalSubscribers.toLocaleString()} />
               <MetricBox label="Active" value={metrics.mailerlite.activeSubscribers.toLocaleString()} />
               <MetricBox label="Open Rate" value={`${metrics.mailerlite.openRate.toFixed(1)}%`} />
               <MetricBox label="Click Rate" value={`${metrics.mailerlite.clickRate.toFixed(1)}%`} />
@@ -341,11 +345,11 @@ export default function SharedReportPage({ token }: SharedReportPageProps) {
           </div>
         )}
 
-        <div className="bg-slate-100 rounded-xl p-6 text-center">
-          <p className="text-sm text-slate-600">
+        <div className="bg-slate-100 rounded-xl p-4 text-center">
+          <p className="text-xs text-slate-600">
             This is a secure, read-only view of the marketing report for {client.name}.
           </p>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-1">
             Data shown is for the last 30 days.
           </p>
         </div>
@@ -362,9 +366,9 @@ interface MetricBoxProps {
 
 function MetricBox({ label, value, highlighted }: MetricBoxProps) {
   return (
-    <div className={`rounded-lg p-4 ${highlighted ? 'bg-green-50 border-2 border-green-200' : 'bg-slate-50 border border-slate-200'}`}>
-      <p className="text-xs text-slate-600 mb-1">{label}</p>
-      <p className={`text-xl font-bold ${highlighted ? 'text-green-700' : 'text-slate-800'}`}>{value}</p>
+    <div className={`rounded-lg p-3 ${highlighted ? 'bg-green-50 border-2 border-green-200' : 'bg-slate-50 border border-slate-200'}`}>
+      <p className="text-xs text-slate-600 mb-0.5">{label}</p>
+      <p className={`text-lg font-bold ${highlighted ? 'text-green-700' : 'text-slate-800'}`}>{value}</p>
     </div>
   );
 }
