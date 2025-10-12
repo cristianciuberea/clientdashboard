@@ -486,11 +486,6 @@ export default function ReportsPage() {
             calculatedTodayRevenue += (metrics?.totalRevenue || 0);
             calculatedTodayOrders += (metrics?.totalOrders || 0);
           });
-            date: today,
-            snapshots: todaySnapshots.length,
-            revenue: calculatedTodayRevenue,
-            orders: calculatedTodayOrders
-          });
         }
 
         // Get YESTERDAY's sales by summing ALL snapshots for yesterday
@@ -501,18 +496,7 @@ export default function ReportsPage() {
             calculatedYesterdayRevenue += (metrics?.totalRevenue || 0);
             calculatedYesterdayOrders += (metrics?.totalOrders || 0);
           });
-            date: yesterday,
-            snapshots: yesterdaySnapshots.length,
-            revenue: calculatedYesterdayRevenue,
-            orders: calculatedYesterdayOrders
-          });
         }
-
-          calculatedTodayRevenue,
-          calculatedTodayOrders,
-          calculatedYesterdayRevenue,
-          calculatedYesterdayOrders
-        });
 
         // Calculate Facebook Ads totals from daily data
         let fbSpend = 0;
