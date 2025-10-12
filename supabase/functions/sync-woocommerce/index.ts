@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
       throw new Error('Missing WooCommerce credentials');
     }
 
-    const allowedStatuses = config?.order_statuses || ['processing', 'completed', 'on-hold', 'pending', 'cancelled', 'refunded', 'failed'];
+    const allowedStatuses = config?.order_statuses || ['completed'];
 
     const auth = btoa(`${consumerKey}:${consumerSecret}`);
     const headers = {
@@ -182,8 +182,8 @@ Deno.serve(async (req: Request) => {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
-    // Total orders = only completed + processing (valid orders)
-    const totalOrders = completedOrders + processingOrders;
+    // Total orders = only completed orders
+    const totalOrders = completedOrders;
 
     console.log(`Final metrics for ${snapshotDate}:`);
     console.log(`- Total orders from API: ${orders.length}`);
