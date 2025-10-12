@@ -68,15 +68,10 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
     };
 
-    // Always fetch cumulative data from month start to the target date
-    const monthStart = new Date(snapshotDate);
-    monthStart.setDate(1);
-    const monthStartStr = monthStart.toISOString().split('T')[0];
-
-    const startDateTime = `${monthStartStr}T00:00:00`;
+    const startDateTime = `${snapshotDate}T00:00:00`;
     const endDateTime = `${snapshotDate}T23:59:59`;
 
-    console.log(`Fetching CUMULATIVE data from ${monthStartStr} to ${snapshotDate}`);
+    console.log(`Fetching data for single day: ${snapshotDate}`);
 
     let allOrders: any[] = [];
     let page = 1;
@@ -122,7 +117,7 @@ Deno.serve(async (req: Request) => {
       totalProducts = products.length;
     }
 
-    console.log(`Saving CUMULATIVE snapshot for date: ${snapshotDate} with metric_type: ${metricType}`);
+    console.log(`Saving daily snapshot for date: ${snapshotDate} with metric_type: ${metricType}`);
 
     let totalRevenue = 0;
     let completedOrders = 0;
