@@ -442,11 +442,11 @@ export default function ReportsPage() {
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50">
-      <div className="p-8">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="p-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">Reports</h1>
-            <p className="text-slate-600">Detailed analytics and insights for {selectedClient.name}</p>
+            <h1 className="text-2xl font-bold text-slate-800 mb-1">Reports</h1>
+            <p className="text-sm text-slate-600">Detailed analytics and insights for {selectedClient.name}</p>
           </div>
 
           <div className="flex items-center space-x-4">

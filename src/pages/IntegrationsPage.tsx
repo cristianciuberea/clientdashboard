@@ -210,11 +210,11 @@ export default function IntegrationsPage() {
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50">
-      <div className="p-8">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="p-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">Integrations</h1>
-            <p className="text-slate-600">Connect and manage your marketing platforms</p>
+            <h1 className="text-2xl font-bold text-slate-800 mb-1">Integrations</h1>
+            <p className="text-sm text-slate-600">Connect and manage your marketing platforms</p>
           </div>
 
           {clients.length > 1 && (

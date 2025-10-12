@@ -161,8 +161,8 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50">
-      <div className="p-8">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="p-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             {onBack && (
               <button
@@ -173,10 +173,10 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
                 <span className="text-sm font-medium">Back to Agency Dashboard</span>
               </button>
             )}
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            <h1 className="text-2xl font-bold text-slate-800 mb-1">
               {selectedClient.name} Dashboard
             </h1>
-            <p className="text-slate-600">Real-time marketing metrics and performance overview</p>
+            <p className="text-sm text-slate-600">Real-time marketing metrics and performance overview</p>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -224,7 +224,7 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             title="Total Revenue"
             value={`${mockMetrics.totalRevenue.toLocaleString()} RON`}
@@ -259,73 +259,73 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-800">Advertising Performance</h2>
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <MousePointer className="w-5 h-5 text-blue-600" />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600">Ad Spend</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   ${mockMetrics.adSpend.toLocaleString()}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600">Clicks</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   {mockMetrics.adClicks.toLocaleString()}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600">Impressions</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   {mockMetrics.adImpressions.toLocaleString()}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3">
+              <div className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-slate-600">CTR</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   {((mockMetrics.adClicks / mockMetrics.adImpressions) * 100).toFixed(2)}%
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-800">E-commerce Metrics</h2>
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-5 h-5 text-green-600" />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600">Total Orders</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   {mockMetrics.orderCount}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600">Average Order Value</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   ${(mockMetrics.totalRevenue / mockMetrics.orderCount).toFixed(2)}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-sm font-medium text-slate-600">Conversion Rate</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   {((mockMetrics.orderCount / mockMetrics.websiteVisitors) * 100).toFixed(2)}%
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3">
+              <div className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-slate-600">Revenue Per Visitor</span>
-                <span className="text-lg font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800">
                   ${(mockMetrics.totalRevenue / mockMetrics.websiteVisitors).toFixed(2)}
                 </span>
               </div>
@@ -333,8 +333,8 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-800">Active Integrations</h2>
             <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
               Manage Integrations
