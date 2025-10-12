@@ -537,36 +537,36 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-slate-800">Yesterday</h3>
-                  <Calendar className="w-5 h-5 text-slate-400" />
+              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl border border-red-700 p-4 shadow-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-white">Yesterday</h3>
+                  <Calendar className="w-5 h-5 text-white" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
-                    <p className="text-sm text-slate-600 mb-1">Revenue</p>
-                    <p className="text-2xl font-bold text-slate-800">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
+                    <p className="text-sm text-red-100 mb-1">Revenue</p>
+                    <p className="text-2xl font-bold text-white">{(metrics.yesterdayRevenue || 0).toLocaleString()} RON</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600 mb-1">Orders</p>
-                    <p className="text-xl font-semibold text-slate-700">{metrics.yesterdayOrders || 0}</p>
+                    <p className="text-sm text-red-100 mb-1">Orders</p>
+                    <p className="text-xl font-semibold text-white">{metrics.yesterdayOrders || 0}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl border border-green-700 p-4 shadow-xl">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-slate-800">Today</h3>
-                  <Calendar className="w-5 h-5 text-blue-500" />
+                  <h3 className="text-lg font-bold text-white">Today</h3>
+                  <Calendar className="w-5 h-5 text-white" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
-                    <p className="text-sm text-slate-600 mb-1">Revenue</p>
+                    <p className="text-sm text-green-100 mb-1">Revenue</p>
                     <div className="flex items-baseline space-x-2">
-                      <p className="text-2xl font-bold text-slate-800">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
+                      <p className="text-2xl font-bold text-white">{(metrics.todayRevenue || 0).toLocaleString()} RON</p>
                       {metrics.yesterdayRevenue !== undefined && metrics.yesterdayRevenue > 0 && metrics.todayRevenue !== undefined && (
                         <span className={`flex items-center text-sm font-medium ${
-                          metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-green-600' : 'text-red-600'
+                          metrics.todayRevenue >= metrics.yesterdayRevenue ? 'text-white' : 'text-green-200'
                         }`}>
                           {metrics.todayRevenue >= metrics.yesterdayRevenue ? (
                             <ArrowUpRight className="w-4 h-4" />
@@ -579,12 +579,12 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600 mb-1">Orders</p>
+                    <p className="text-sm text-green-100 mb-1">Orders</p>
                     <div className="flex items-baseline space-x-2">
-                      <p className="text-xl font-semibold text-slate-700">{metrics.todayOrders || 0}</p>
+                      <p className="text-xl font-semibold text-white">{metrics.todayOrders || 0}</p>
                       {metrics.yesterdayOrders !== undefined && metrics.yesterdayOrders > 0 && metrics.todayOrders !== undefined && (
                         <span className={`flex items-center text-sm font-medium ${
-                          metrics.todayOrders >= metrics.yesterdayOrders ? 'text-green-600' : 'text-red-600'
+                          metrics.todayOrders >= metrics.yesterdayOrders ? 'text-white' : 'text-green-200'
                         }`}>
                           {metrics.todayOrders >= metrics.yesterdayOrders ? (
                             <ArrowUpRight className="w-4 h-4" />
