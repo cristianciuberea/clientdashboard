@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, TrendingUp, DollarSign, Activity, Plus, Search } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2 } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import type { Database } from '../lib/database.types';
 
@@ -39,6 +39,78 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
       console.error('Error fetching clients:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClient = async (clientId: string, clientName: string) => {
+    if (!confirm(`Are you sure you want to delete "${clientName}"?\n\nThis will permanently delete:\n- All integrations\n- All metrics data\n- All alerts\n- All user assignments\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete in order: child records first, then parent
+
+      // 1. Delete metrics snapshots
+      const { error: metricsError } = await supabase
+        .from('metrics_snapshots')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (metricsError) throw metricsError;
+
+      // 2. Delete alerts
+      const { error: alertsError } = await supabase
+        .from('alerts')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (alertsError) throw alertsError;
+
+      // 3. Delete client_users assignments
+      const { error: clientUsersError } = await supabase
+        .from('client_users')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (clientUsersError) throw clientUsersError;
+
+      // 4. Delete integrations
+      const { error: integrationsError } = await supabase
+        .from('integrations')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (integrationsError) throw integrationsError;
+
+      // 5. Delete report_shares
+      const { error: reportSharesError } = await supabase
+        .from('report_shares')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (reportSharesError) throw reportSharesError;
+
+      // 6. Delete reports
+      const { error: reportsError } = await supabase
+        .from('reports')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (reportsError) throw reportsError;
+
+      // 7. Finally, delete the client
+      const { error: clientError } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+
+      if (clientError) throw clientError;
+
+      alert(`Client "${clientName}" deleted successfully!`);
+      fetchClients(); // Refresh list
+    } catch (error: any) {
+      console.error('Error deleting client:', error);
+      alert(`Failed to delete client: ${error.message}`);
     }
   };
 
@@ -148,12 +220,15 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Created
                   </th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {filteredClients.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="text-slate-400">
                         <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
                         <p className="text-lg font-medium mb-1">No clients found</p>
@@ -208,6 +283,18 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
                         {new Date(client.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClient(client.id, client.name);
+                          }}
+                          className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition inline-flex items-center justify-center"
+                          title="Delete Client"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))
