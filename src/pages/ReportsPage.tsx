@@ -98,34 +98,38 @@ export default function ReportsPage() {
 
   const fetchMetrics = useCallback(async (clientId: string) => {
     try {
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
+      const todayDate = new Date();
+      const yesterdayDate = new Date(todayDate);
+      yesterdayDate.setDate(todayDate.getDate() - 1);
+      
+      // Convert to strings for comparison with snapshot.date
+      const today = todayDate.toISOString().split('T')[0];
+      const yesterday = yesterdayDate.toISOString().split('T')[0];
 
       let startDate: Date;
       let endDate: Date = new Date();
 
       switch (dateRange) {
         case 'today':
-          startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+          startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+          endDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate(), 23, 59, 59);
           break;
         case 'yesterday':
-          startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-          endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          startDate = new Date(yesterdayDate.getFullYear(), yesterdayDate.getMonth(), yesterdayDate.getDate());
+          endDate = new Date(yesterdayDate.getFullYear(), yesterdayDate.getMonth(), yesterdayDate.getDate());
           break;
         case 'this_month':
-          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
           break;
         case 'last_month':
-          startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-          endDate = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+          startDate = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1);
+          endDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 0, 23, 59, 59);
           break;
         case 'this_year':
-          startDate = new Date(today.getFullYear(), 0, 1);
+          startDate = new Date(todayDate.getFullYear(), 0, 1);
           break;
         default:
-          startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
       }
 
       console.log('=== FETCH METRICS ===');
@@ -435,18 +439,18 @@ export default function ReportsPage() {
             // Find the correct aggregated snapshot for this period
             let aggregateSnapshot = null;
             if (isPeriodRange && wooAggregateSnapshots.length > 0) {
-              const today = new Date();
+              const todayForAggregate = new Date();
               let expectedAggregateDate: string;
 
               switch (dateRange) {
                 case 'this_month':
-                  expectedAggregateDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                  expectedAggregateDate = new Date(todayForAggregate.getFullYear(), todayForAggregate.getMonth(), 1).toISOString().split('T')[0];
                   break;
                 case 'last_month':
-                  expectedAggregateDate = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0];
+                  expectedAggregateDate = new Date(todayForAggregate.getFullYear(), todayForAggregate.getMonth() - 1, 1).toISOString().split('T')[0];
                   break;
                 case 'this_year':
-                  expectedAggregateDate = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+                  expectedAggregateDate = new Date(todayForAggregate.getFullYear(), 0, 1).toISOString().split('T')[0];
                   break;
                 default:
                   expectedAggregateDate = '';
