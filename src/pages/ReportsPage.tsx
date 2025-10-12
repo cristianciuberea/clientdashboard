@@ -115,7 +115,8 @@ export default function ReportsPage() {
 
       switch (dateRange) {
         case 'today':
-          startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          // Include yesterday's data for comparison
+          startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
           endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
           break;
         case 'yesterday':
