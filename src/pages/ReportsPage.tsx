@@ -540,31 +540,33 @@ export default function ReportsPage() {
           }
         }
 
-        // Get TODAY's sales directly from topProducts
-        const todaySnapshot = wooSnapshots.find(s => s.date === today);
-        if (todaySnapshot) {
-          const metrics = todaySnapshot.metrics as any;
-          if (metrics.topProducts) {
-            calculatedTodayRevenue = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.revenue || 0), 0);
-            calculatedTodayOrders = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0);
-          }
+        // Get TODAY's sales by summing ALL snapshots for today
+        const todaySnapshots = wooSnapshots.filter(s => s.date === today);
+        if (todaySnapshots.length > 0) {
+          todaySnapshots.forEach(snapshot => {
+            const metrics = snapshot.metrics as any;
+            calculatedTodayRevenue += (metrics?.totalRevenue || 0);
+            calculatedTodayOrders += (metrics?.totalOrders || 0);
+          });
           console.log('TODAY sales:', {
             date: today,
+            snapshots: todaySnapshots.length,
             revenue: calculatedTodayRevenue,
             orders: calculatedTodayOrders
           });
         }
 
-        // Get YESTERDAY's sales directly from topProducts
-        const yesterdaySnapshot = wooSnapshots.find(s => s.date === yesterday);
-        if (yesterdaySnapshot) {
-          const metrics = yesterdaySnapshot.metrics as any;
-          if (metrics.topProducts) {
-            calculatedYesterdayRevenue = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.revenue || 0), 0);
-            calculatedYesterdayOrders = metrics.topProducts.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0);
-          }
+        // Get YESTERDAY's sales by summing ALL snapshots for yesterday
+        const yesterdaySnapshots = wooSnapshots.filter(s => s.date === yesterday);
+        if (yesterdaySnapshots.length > 0) {
+          yesterdaySnapshots.forEach(snapshot => {
+            const metrics = snapshot.metrics as any;
+            calculatedYesterdayRevenue += (metrics?.totalRevenue || 0);
+            calculatedYesterdayOrders += (metrics?.totalOrders || 0);
+          });
           console.log('YESTERDAY sales:', {
             date: yesterday,
+            snapshots: yesterdaySnapshots.length,
             revenue: calculatedYesterdayRevenue,
             orders: calculatedYesterdayOrders
           });
