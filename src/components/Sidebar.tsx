@@ -13,6 +13,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const [unreadAlerts, setUnreadAlerts] = useState(0);
 
   const isSuperAdmin = profile?.role === 'super_admin';
+  const isClient = profile?.role === 'client';
 
   useEffect(() => {
     fetchUnreadAlerts();
@@ -42,7 +43,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
     { id: 'reports', label: 'Reports', icon: FileText },
     { id: 'alerts', label: 'Alerts', icon: Bell },
     ...(isSuperAdmin ? [{ id: 'users', label: 'User Management', icon: UserCog }] : []),
-    { id: 'settings', label: 'Settings', icon: Settings },
+    ...(!isClient ? [{ id: 'settings', label: 'Settings', icon: Settings }] : []),
   ];
 
   return (
