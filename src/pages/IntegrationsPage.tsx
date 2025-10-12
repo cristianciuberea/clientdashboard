@@ -87,6 +87,8 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformConfig | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillProgress, setBackfillProgress] = useState({ current: 0, total: 0, currentDate: '', success: 0, failed: 0 });
 
   useEffect(() => {
     fetchClients();
@@ -197,6 +199,8 @@ export default function IntegrationsPage() {
 
     if (!confirm(`Backfill data from ${startDate} to ${endDate}?`)) return;
 
+    setBackfilling(true);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -209,14 +213,17 @@ export default function IntegrationsPage() {
         dates.push(new Date(d).toISOString().split('T')[0]);
       }
 
-      alert(`Starting backfill for ${dates.length} days. This may take a while...`);
+      setBackfillProgress({ current: 0, total: dates.length, currentDate: dates[0], success: 0, failed: 0 });
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platform.id.replace('_', '-')}`;
 
       let successCount = 0;
       let failCount = 0;
+      let current = 0;
 
       for (const date of dates) {
+        setBackfillProgress({ current, total: dates.length, currentDate: date, success: successCount, failed: failCount });
+        
         try {
           const response = await fetch(apiUrl, {
             method: 'POST',
@@ -235,7 +242,6 @@ export default function IntegrationsPage() {
 
           if (response.ok) {
             successCount++;
-            console.log(`✓ Synced ${date}`);
           } else {
             failCount++;
             console.error(`✗ Failed ${date}:`, result.error);
@@ -245,6 +251,9 @@ export default function IntegrationsPage() {
           console.error(`✗ Error ${date}:`, error.message);
         }
 
+        current++;
+        setBackfillProgress({ current, total: dates.length, currentDate: date, success: successCount, failed: failCount });
+        
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
@@ -256,6 +265,8 @@ export default function IntegrationsPage() {
     } catch (error: any) {
       console.error('Error during backfill:', error);
       alert(`Backfill failed: ${error.message}`);
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -311,6 +322,33 @@ export default function IntegrationsPage() {
             <p className="text-sm text-blue-800">
               <span className="font-semibold">Currently managing:</span> {selectedClient.name}
             </p>
+          </div>
+        )}
+
+        {backfilling && backfillProgress.total > 0 && (
+          <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800">Backfilling: {backfillProgress.currentDate}</h3>
+                <p className="text-xs text-slate-600">
+                  {backfillProgress.current} / {backfillProgress.total} days completed
+                  {' • '}
+                  <span className="text-green-600">{backfillProgress.success} success</span>
+                  {backfillProgress.failed > 0 && (
+                    <span className="text-red-600"> • {backfillProgress.failed} failed</span>
+                  )}
+                </p>
+              </div>
+              <span className="text-sm font-bold text-blue-600">
+                {Math.round((backfillProgress.current / backfillProgress.total) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${(backfillProgress.current / backfillProgress.total) * 100}%` }}
+              />
+            </div>
           </div>
         )}
 
