@@ -69,6 +69,7 @@ export default function ReportsPage() {
   const [metrics, setMetrics] = useState<AggregatedMetrics | null>(null);
   const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year'>('today');
   const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0, currentPeriod: '' });
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [showShareModal, setShowShareModal] = useState(false);
   // TODO: Implement sharing functionality
@@ -611,6 +612,8 @@ export default function ReportsPage() {
     }
 
     setSyncing(true);
+    setSyncProgress({ current: 0, total: 0, currentPeriod: '' });
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -621,29 +624,38 @@ export default function ReportsPage() {
 
       // Define all periods to sync
       const periodsToSync = [
-        { range: 'today' as const, dateFrom: undefined, dateTo: today.toISOString().split('T')[0] },
-        { range: 'yesterday' as const, dateFrom: undefined, dateTo: yesterday.toISOString().split('T')[0] },
+        { range: 'today' as const, label: 'Today', dateFrom: undefined, dateTo: today.toISOString().split('T')[0] },
+        { range: 'yesterday' as const, label: 'Yesterday', dateFrom: undefined, dateTo: yesterday.toISOString().split('T')[0] },
         {
           range: 'this_month' as const,
+          label: 'This Month',
           dateFrom: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0],
           dateTo: today.toISOString().split('T')[0]
         },
         {
           range: 'last_month' as const,
+          label: 'Last Month',
           dateFrom: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0],
           dateTo: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0]
         },
         {
           range: 'this_year' as const,
+          label: 'This Year',
           dateFrom: new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0],
           dateTo: today.toISOString().split('T')[0]
         },
       ];
 
+      const totalTasks = periodsToSync.length * integrations.length;
+      setSyncProgress({ current: 0, total: totalTasks, currentPeriod: periodsToSync[0].label });
 
-      // Sync all periods for all integrations in parallel
-      const allSyncPromises = periodsToSync.flatMap(period =>
-        integrations.map(async (integration) => {
+      let completed = 0;
+
+      // Sync all periods sequentially with progress tracking
+      for (const period of periodsToSync) {
+        setSyncProgress({ current: completed, total: totalTasks, currentPeriod: period.label });
+        
+        for (const integration of integrations) {
           const platformSlug = integration.platform.replace('_', '-');
           const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platformSlug}`;
 
@@ -653,7 +665,6 @@ export default function ReportsPage() {
             date_to: period.dateTo,
             ...(period.dateFrom && { date_from: period.dateFrom }),
           };
-
 
           const response = await fetch(apiUrl, {
             method: 'POST',
@@ -670,12 +681,11 @@ export default function ReportsPage() {
             throw new Error(`${integration.platform} ${period.range}: ${result.error || 'Sync failed'}`);
           }
 
-          const result = await response.json();
-          return result;
-        })
-      );
+          completed++;
+          setSyncProgress({ current: completed, total: totalTasks, currentPeriod: period.label });
+        }
+      }
 
-      await Promise.all(allSyncPromises);
       alert(`All periods synced successfully! (${periodsToSync.length} periods × ${integrations.length} integrations)`);
 
       if (selectedClient) {
@@ -874,6 +884,28 @@ export default function ReportsPage() {
             </button>
           </div>
         </div>
+
+        {syncing && syncProgress.total > 0 && (
+          <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800">Syncing: {syncProgress.currentPeriod}</h3>
+                <p className="text-xs text-slate-600">
+                  {syncProgress.current} / {syncProgress.total} tasks completed
+                </p>
+              </div>
+              <span className="text-sm font-bold text-blue-600">
+                {Math.round((syncProgress.current / syncProgress.total) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {metrics ? (
           <>
