@@ -162,33 +162,9 @@ export default function ReportsPage() {
       const endDay = String(endDate.getDate()).padStart(2, '0');
       const endDateStr = `${endYear}-${endMonth}-${endDay}`;
 
-      // Debug logging
-      if (dateRange === 'this_year' || dateRange === 'last_month') {
-        console.log(`[${dateRange}] Date Range:`, startDateStr, 'to', endDateStr);
-        console.log(`[${dateRange}] Total snapshots in DB:`, allData?.length);
-        
-        // Show what dates actually exist in DB
-        if (allData && allData.length > 0) {
-          const uniqueDates = [...new Set(allData.map(s => s.date))].sort();
-          console.log(`[${dateRange}] Available dates in DB:`, uniqueDates.slice(0, 5), '...', uniqueDates.slice(-5));
-          console.log(`[${dateRange}] Date range available: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`);
-        }
-      }
-
       const data = allData?.filter(snapshot => {
         return snapshot.date >= startDateStr && snapshot.date <= endDateStr;
       });
-
-      // Debug logging
-      if (dateRange === 'this_year' || dateRange === 'last_month') {
-        console.log(`[${dateRange}] Filtered snapshots:`, data?.length);
-        console.log(`[${dateRange}] Date range in snapshots:`, 
-          data && data.length > 0 ? `${data[data.length - 1].date} to ${data[0].date}` : 'none');
-        
-        if (data?.length === 0 && allData && allData.length > 0) {
-          console.warn(`[${dateRange}] ⚠️ NO DATA for range ${startDateStr} to ${endDateStr}. Need to backfill this period!`);
-        }
-      }
 
       const error = null; // No error since we filtered client-side
 
@@ -244,15 +220,6 @@ export default function ReportsPage() {
         const wooSnapshots = sortedSnapshots.filter(
           (s) => (s.platform === 'woocommerce' || s.platform === 'wordpress') && (s as any).metric_type !== 'ecommerce_aggregate'
         );
-
-        // Debug logging for aggregates
-        if (dateRange === 'this_year' || dateRange === 'last_month') {
-          console.log(`[${dateRange}] WooCommerce aggregate snapshots:`, wooAggregateSnapshots.length);
-          console.log(`[${dateRange}] WooCommerce daily snapshots:`, wooSnapshots.length);
-          if (wooAggregateSnapshots.length > 0) {
-            console.log(`[${dateRange}] Aggregate dates:`, wooAggregateSnapshots.map(s => s.date));
-          }
-        }
 
         if (sortedSnapshots.length > 0) {
           firstDayDate = sortedSnapshots[0].date;
@@ -561,18 +528,6 @@ export default function ReportsPage() {
           cpm: fbImpressions > 0 ? (fbSpend / fbImpressions) * 1000 : 0,
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
-
-        // Debug logging for final metrics
-        if (dateRange === 'this_year' || dateRange === 'last_month') {
-          console.log(`[${dateRange}] Final Metrics:`, {
-            aggregatedRevenue,
-            aggregatedOrders,
-            totalProducts,
-            completedOrders,
-            processingOrders,
-            pendingOrders
-          });
-        }
 
         setMetrics({
           totalRevenue: aggregatedRevenue,
