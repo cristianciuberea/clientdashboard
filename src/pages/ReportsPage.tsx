@@ -102,9 +102,9 @@ export default function ReportsPage() {
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
       
-      // String versions for comparison with snapshot.date
-      const todayStr = today.toISOString().split('T')[0];
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      // String versions for comparison with snapshot.date (use local timezone, not UTC)
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
       let startDate: Date;
       let endDate: Date = new Date();
