@@ -198,23 +198,11 @@ export default function ReportsPage() {
 
         for (const snapshot of data) {
           const key = `${snapshot.date}-${snapshot.platform}`;
-          const snapshotMetrics = snapshot.metrics as any;
 
-          // For WooCommerce/WordPress, take the snapshot with HIGHEST cumulative revenue for each date
-          if (snapshot.platform === 'woocommerce' || snapshot.platform === 'wordpress') {
-            if (!latestByDatePlatform[key] ||
-                (snapshotMetrics.totalRevenue || 0) > ((latestByDatePlatform[key].metrics as any).totalRevenue || 0)) {
-              latestByDatePlatform[key] = snapshot;
-            }
-          } else {
-            // For other platforms (FB Ads, etc), take the snapshot with highest spend/metric value
-            const currentValue = snapshotMetrics.spend || snapshotMetrics.impressions || 0;
-            const existingValue = latestByDatePlatform[key] ?
-              ((latestByDatePlatform[key].metrics as any).spend || (latestByDatePlatform[key].metrics as any).impressions || 0) : 0;
-
-            if (!latestByDatePlatform[key] || currentValue > existingValue) {
-              latestByDatePlatform[key] = snapshot;
-            }
+          // Always take the most recently created snapshot for each date-platform combination
+          if (!latestByDatePlatform[key] ||
+              new Date((snapshot as any).created_at) > new Date((latestByDatePlatform[key] as any).created_at)) {
+            latestByDatePlatform[key] = snapshot;
           }
         }
 
