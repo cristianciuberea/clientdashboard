@@ -36,8 +36,8 @@ export default function BackfillBanner() {
   const elapsedSeconds = Math.floor((elapsed % 60000) / 1000);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+    <div className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
+      <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1">
             <RefreshCw className="w-5 h-5 animate-spin" />

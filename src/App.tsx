@@ -97,13 +97,13 @@ function AppContent() {
   };
 
   return (
-    <>
-      <BackfillBanner />
-      <div className="flex h-screen bg-slate-50">
-        <Sidebar activeView={activeView} onViewChange={setActiveView} />
+    <div className="flex h-screen bg-slate-50">
+      <Sidebar activeView={activeView} onViewChange={setActiveView} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <BackfillBanner />
         {renderView()}
       </div>
-    </>
+    </div>
   );
 }
 
