@@ -700,7 +700,14 @@ export default function ReportsPage() {
   };
 
   const handleSyncAll = async () => {
-    if (!selectedClient || integrations.length === 0) return;
+    console.log('=== SYNC ALL STARTED ===');
+    console.log('Selected client:', selectedClient);
+    console.log('Integrations count:', integrations.length);
+
+    if (!selectedClient || integrations.length === 0) {
+      console.error('Cannot sync: missing client or integrations');
+      return;
+    }
 
     setSyncing(true);
     try {
