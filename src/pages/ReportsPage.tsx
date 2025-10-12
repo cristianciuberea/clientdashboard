@@ -160,12 +160,16 @@ export default function ReportsPage() {
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
+        // Filter WooCommerce/WordPress snapshots for calculating daily differences
+        const wooSnapshots = sortedSnapshots.filter(s => s.platform === 'woocommerce' || s.platform === 'wordpress');
+
         if (sortedSnapshots.length > 0) {
           firstDayDate = sortedSnapshots[0].date;
           lastDayDate = sortedSnapshots[sortedSnapshots.length - 1].date;
           console.log('firstDayDate:', firstDayDate);
           console.log('lastDayDate:', lastDayDate);
           console.log('Total unique snapshots:', sortedSnapshots.length);
+          console.log('WooCommerce snapshots:', wooSnapshots.length);
         }
 
         let fbSpend = 0;
@@ -310,6 +314,36 @@ export default function ReportsPage() {
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
 
+        // For WooCommerce, calculate daily differences from cumulative data
+        let calculatedYesterdayRevenue = 0;
+        let calculatedYesterdayOrders = 0;
+        let calculatedTodayRevenue = 0;
+        let calculatedTodayOrders = 0;
+
+        if (wooSnapshots.length >= 2) {
+          // Get last two days of data
+          const lastSnapshot = wooSnapshots[wooSnapshots.length - 1].metrics as any;
+          const secondLastSnapshot = wooSnapshots[wooSnapshots.length - 2].metrics as any;
+
+          // Today's revenue/orders = difference between last and second-last
+          calculatedTodayRevenue = (lastSnapshot.totalRevenue || 0) - (secondLastSnapshot.totalRevenue || 0);
+          calculatedTodayOrders = (lastSnapshot.totalOrders || 0) - (secondLastSnapshot.totalOrders || 0);
+
+          if (wooSnapshots.length >= 3) {
+            const thirdLastSnapshot = wooSnapshots[wooSnapshots.length - 3].metrics as any;
+            // Yesterday's revenue/orders = difference between second-last and third-last
+            calculatedYesterdayRevenue = (secondLastSnapshot.totalRevenue || 0) - (thirdLastSnapshot.totalRevenue || 0);
+            calculatedYesterdayOrders = (secondLastSnapshot.totalOrders || 0) - (thirdLastSnapshot.totalOrders || 0);
+          }
+
+          console.log('Calculated daily metrics:', {
+            calculatedTodayRevenue,
+            calculatedTodayOrders,
+            calculatedYesterdayRevenue,
+            calculatedYesterdayOrders
+          });
+        }
+
         console.log('Aggregated metrics:', { aggregatedRevenue, aggregatedOrders, topProducts, facebookAds });
 
         setMetrics({
@@ -325,10 +359,10 @@ export default function ReportsPage() {
           yesterdayTopProducts,
           firstDayTopProducts,
           lastDayTopProducts,
-          todayRevenue: todayMetric?.totalRevenue || 0,
-          todayOrders: todayMetric?.totalOrders || 0,
-          yesterdayRevenue: yesterdayMetric?.totalRevenue || 0,
-          yesterdayOrders: yesterdayMetric?.totalOrders || 0,
+          todayRevenue: calculatedTodayRevenue || todayMetric?.totalRevenue || 0,
+          todayOrders: calculatedTodayOrders || todayMetric?.totalOrders || 0,
+          yesterdayRevenue: calculatedYesterdayRevenue || yesterdayMetric?.totalRevenue || 0,
+          yesterdayOrders: calculatedYesterdayOrders || yesterdayMetric?.totalOrders || 0,
           firstDayRevenue: firstDayMetric?.totalRevenue || 0,
           firstDayOrders: firstDayMetric?.totalOrders || 0,
           lastDayRevenue: lastDayMetric?.totalRevenue || 0,
@@ -538,9 +572,8 @@ export default function ReportsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               <div className="bg-white rounded-xl border border-slate-200 p-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2">
                   <h3 className="text-base font-bold text-slate-800">Yesterday</h3>
-                  <Calendar className="w-4 h-4 text-slate-400" />
                 </div>
                 <div className="space-y-2">
                   <div>
@@ -555,9 +588,8 @@ export default function ReportsPage() {
               </div>
 
               <div className="bg-white rounded-xl border border-slate-200 p-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2">
                   <h3 className="text-base font-bold text-slate-800">Today</h3>
-                  <Calendar className="w-4 h-4 text-blue-500" />
                 </div>
                 <div className="space-y-2">
                   <div>
@@ -602,14 +634,9 @@ export default function ReportsPage() {
 
             {metrics.facebookAds && (
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-3 mb-3">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-slate-800">Facebook Ads Performance</h2>
-                    <p className="text-xs text-blue-700">Campaign metrics for selected period</p>
-                  </div>
+                <div className="mb-3">
+                  <h2 className="text-base font-bold text-slate-800">Facebook Ads Performance</h2>
+                  <p className="text-xs text-blue-700">Campaign metrics for selected period</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
@@ -826,21 +853,16 @@ interface MetricCardProps {
 function MetricCard({ title, value, icon: Icon, iconBg, iconColor, trend }: MetricCardProps) {
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${iconColor}`} />
+      {trend !== undefined && (
+        <div className={`flex items-center space-x-1 mb-2 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {trend >= 0 ? (
+            <ArrowUpRight className="w-3 h-3" />
+          ) : (
+            <ArrowDownRight className="w-3 h-3" />
+          )}
+          <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
         </div>
-        {trend !== undefined && (
-          <div className={`flex items-center space-x-1 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {trend >= 0 ? (
-              <ArrowUpRight className="w-3 h-3" />
-            ) : (
-              <ArrowDownRight className="w-3 h-3" />
-            )}
-            <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
-          </div>
-        )}
-      </div>
+      )}
       <p className="text-xs text-slate-600 mb-1">{title}</p>
       <p className="text-xl font-bold text-slate-800">{value}</p>
     </div>
