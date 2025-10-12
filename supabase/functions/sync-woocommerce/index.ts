@@ -36,9 +36,8 @@ Deno.serve(async (req: Request) => {
       throw new Error('Missing required parameters: integration_id, client_id');
     }
 
-    const isRangeQuery = date_from && date_to && date_from !== date_to;
-    const metricType = isRangeQuery ? 'ecommerce_aggregate' : 'ecommerce';
-    const snapshotDate = isRangeQuery ? date_from : (date_to || new Date().toISOString().split('T')[0]);
+    const snapshotDate = date_to || new Date().toISOString().split('T')[0];
+    const metricType = 'ecommerce';
 
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integrations')
@@ -69,8 +68,15 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
     };
 
-    const startDateTime = isRangeQuery ? `${date_from}T00:00:00` : `${snapshotDate}T00:00:00`;
-    const endDateTime = isRangeQuery ? `${date_to}T23:59:59` : `${snapshotDate}T23:59:59`;
+    // Always fetch cumulative data from month start to the target date
+    const monthStart = new Date(snapshotDate);
+    monthStart.setDate(1);
+    const monthStartStr = monthStart.toISOString().split('T')[0];
+
+    const startDateTime = `${monthStartStr}T00:00:00`;
+    const endDateTime = `${snapshotDate}T23:59:59`;
+
+    console.log(`Fetching CUMULATIVE data from ${monthStartStr} to ${snapshotDate}`);
 
     let allOrders: any[] = [];
     let page = 1;
@@ -116,7 +122,7 @@ Deno.serve(async (req: Request) => {
       totalProducts = products.length;
     }
 
-    console.log(`Saving snapshot for date: ${snapshotDate} (${isRangeQuery ? 'range' : 'single day'}) with metric_type: ${metricType}`);
+    console.log(`Saving CUMULATIVE snapshot for date: ${snapshotDate} with metric_type: ${metricType}`);
 
     let totalRevenue = 0;
     let completedOrders = 0;
