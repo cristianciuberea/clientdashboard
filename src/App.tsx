@@ -9,6 +9,7 @@ import AlertsPage from './pages/AlertsPage';
 import SharedReportPage from './pages/SharedReportPage';
 import UserManagementPage from './pages/UserManagementPage';
 import Sidebar from './components/Sidebar';
+import BackfillBanner from './components/BackfillBanner';
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -96,10 +97,13 @@ function AppContent() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <Sidebar activeView={activeView} onViewChange={setActiveView} />
-      {renderView()}
-    </div>
+    <>
+      <BackfillBanner />
+      <div className="flex h-screen bg-slate-50">
+        <Sidebar activeView={activeView} onViewChange={setActiveView} />
+        {renderView()}
+      </div>
+    </>
   );
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Facebook, TrendingUp, ShoppingCart, Mail, FileCode, Plus, Check, X, RefreshCw } from 'lucide-react';
 import type { Database } from '../lib/database.types';
+import { backfillStore } from '../lib/backfillStore';
 
 type Client = Database['public']['Tables']['clients']['Row'];
 type Integration = Database['public']['Tables']['integrations']['Row'];
@@ -213,7 +214,16 @@ export default function IntegrationsPage() {
         dates.push(new Date(d).toISOString().split('T')[0]);
       }
 
-      setBackfillProgress({ current: 0, total: dates.length, currentDate: dates[0], success: 0, failed: 0 });
+      const initialProgress = { current: 0, total: dates.length, currentDate: dates[0], success: 0, failed: 0 };
+      setBackfillProgress(initialProgress);
+      
+      // Save to global store
+      backfillStore.set({
+        isRunning: true,
+        ...initialProgress,
+        platformName: platform.name,
+        startTime: Date.now(),
+      });
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platform.id.replace('_', '-')}`;
 
@@ -222,7 +232,16 @@ export default function IntegrationsPage() {
       let current = 0;
 
       for (const date of dates) {
-        setBackfillProgress({ current, total: dates.length, currentDate: date, success: successCount, failed: failCount });
+        const progressState = { current, total: dates.length, currentDate: date, success: successCount, failed: failCount };
+        setBackfillProgress(progressState);
+        
+        // Update global store
+        backfillStore.set({
+          isRunning: true,
+          ...progressState,
+          platformName: platform.name,
+          startTime: backfillStore.get()?.startTime || Date.now(),
+        });
         
         try {
           const response = await fetch(apiUrl, {
@@ -252,11 +271,23 @@ export default function IntegrationsPage() {
         }
 
         current++;
-        setBackfillProgress({ current, total: dates.length, currentDate: date, success: successCount, failed: failCount });
+        const finalProgressState = { current, total: dates.length, currentDate: date, success: successCount, failed: failCount };
+        setBackfillProgress(finalProgressState);
+        
+        // Update global store
+        backfillStore.set({
+          isRunning: true,
+          ...finalProgressState,
+          platformName: platform.name,
+          startTime: backfillStore.get()?.startTime || Date.now(),
+        });
         
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
+      // Clear store when done
+      backfillStore.clear();
+      
       alert(`Backfill complete!\nSuccess: ${successCount}\nFailed: ${failCount}`);
 
       if (selectedClient) {
@@ -264,6 +295,7 @@ export default function IntegrationsPage() {
       }
     } catch (error: any) {
       console.error('Error during backfill:', error);
+      backfillStore.clear();
       alert(`Backfill failed: ${error.message}`);
     } finally {
       setBackfilling(false);
