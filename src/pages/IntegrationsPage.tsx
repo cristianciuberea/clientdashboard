@@ -188,6 +188,77 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleBackfill = async (integration: Integration, platform: PlatformConfig) => {
+    const startDate = prompt('Enter start date (YYYY-MM-DD):', '2025-10-01');
+    if (!startDate) return;
+
+    const endDate = prompt('Enter end date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+    if (!endDate) return;
+
+    if (!confirm(`Backfill data from ${startDate} to ${endDate}?`)) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dates = [];
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d).toISOString().split('T')[0]);
+      }
+
+      alert(`Starting backfill for ${dates.length} days. This may take a while...`);
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platform.id.replace('_', '-')}`;
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const date of dates) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              integration_id: integration.id,
+              client_id: integration.client_id,
+              date_to: date,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            successCount++;
+            console.log(`✓ Synced ${date}`);
+          } else {
+            failCount++;
+            console.error(`✗ Failed ${date}:`, result.error);
+          }
+        } catch (error: any) {
+          failCount++;
+          console.error(`✗ Error ${date}:`, error.message);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      alert(`Backfill complete!\nSuccess: ${successCount}\nFailed: ${failCount}`);
+
+      if (selectedClient) {
+        fetchIntegrations(selectedClient.id);
+      }
+    } catch (error: any) {
+      console.error('Error during backfill:', error);
+      alert(`Backfill failed: ${error.message}`);
+    }
+  };
+
   const handleAddIntegration = (platform: PlatformConfig) => {
     setSelectedPlatform(platform);
     setShowAddModal(true);
@@ -284,6 +355,13 @@ export default function IntegrationsPage() {
                     >
                       <RefreshCw className="w-4 h-4" />
                       <span>Sync Now</span>
+                    </button>
+                    <button
+                      onClick={() => integration && handleBackfill(integration, platform)}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Backfill History</span>
                     </button>
                     <button
                       onClick={() => integration && handleDisconnect(integration.id)}
