@@ -166,6 +166,13 @@ export default function ReportsPage() {
       if (dateRange === 'this_year' || dateRange === 'last_month') {
         console.log(`[${dateRange}] Date Range:`, startDateStr, 'to', endDateStr);
         console.log(`[${dateRange}] Total snapshots in DB:`, allData?.length);
+        
+        // Show what dates actually exist in DB
+        if (allData && allData.length > 0) {
+          const uniqueDates = [...new Set(allData.map(s => s.date))].sort();
+          console.log(`[${dateRange}] Available dates in DB:`, uniqueDates.slice(0, 5), '...', uniqueDates.slice(-5));
+          console.log(`[${dateRange}] Date range available: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`);
+        }
       }
 
       const data = allData?.filter(snapshot => {
@@ -177,6 +184,10 @@ export default function ReportsPage() {
         console.log(`[${dateRange}] Filtered snapshots:`, data?.length);
         console.log(`[${dateRange}] Date range in snapshots:`, 
           data && data.length > 0 ? `${data[data.length - 1].date} to ${data[0].date}` : 'none');
+        
+        if (data?.length === 0 && allData && allData.length > 0) {
+          console.warn(`[${dateRange}] ⚠️ NO DATA for range ${startDateStr} to ${endDateStr}. Need to backfill this period!`);
+        }
       }
 
       const error = null; // No error since we filtered client-side
