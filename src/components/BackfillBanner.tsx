@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, X } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, X, StopCircle } from 'lucide-react';
 import { backfillStore, BackfillState } from '../lib/backfillStore';
 
 export default function BackfillBanner() {
@@ -12,6 +12,15 @@ export default function BackfillBanner() {
     if (initialState?.isRunning) {
       setState(initialState);
       setIsVisible(true);
+      
+      // Auto-clear if stuck for more than 1 hour
+      const elapsed = Date.now() - initialState.startTime;
+      if (elapsed > 3600000) { // 1 hour in ms
+        console.warn('Backfill appears stuck (>1 hour old). Auto-clearing...');
+        backfillStore.clear();
+        setState(null);
+        setIsVisible(false);
+      }
     }
 
     // Subscribe to updates
@@ -23,6 +32,14 @@ export default function BackfillBanner() {
 
     return unsubscribe;
   }, []);
+
+  const handleStop = () => {
+    if (confirm('Are you sure you want to stop the backfill process?\n\nNote: The backfill may have already stopped if you closed the Settings page.')) {
+      backfillStore.clear();
+      setState(null);
+      setIsVisible(false);
+    }
+  };
 
   const handleDismiss = () => {
     setIsVisible(false);
@@ -83,13 +100,23 @@ export default function BackfillBanner() {
               </div>
             </div>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="ml-4 p-1 hover:bg-blue-500 rounded transition"
-            title="Hide (will continue in background)"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center space-x-2 ml-4">
+            <button
+              onClick={handleStop}
+              className="flex items-center space-x-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition text-sm font-medium"
+              title="Stop backfill process"
+            >
+              <StopCircle className="w-4 h-4" />
+              <span>Stop</span>
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="p-1 hover:bg-blue-500 rounded transition"
+              title="Hide (will continue in background)"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
