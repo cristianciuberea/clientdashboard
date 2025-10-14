@@ -160,17 +160,28 @@ export default function GoalsDashboard() {
             // Calculate based on metric type
             switch (goal.metric_type) {
               case 'revenue': {
+                console.log(`[GOAL] Period: ${goal.start_date} to ${goal.end_date}`);
+                console.log(`[GOAL] Total snapshots in period:`, snapshots.length);
+                console.log(`[GOAL] WooCommerce aggregate snapshots:`, wooAggregateSnapshots.length);
+                console.log(`[GOAL] WooCommerce daily snapshots:`, wooDailySnapshots.length);
+                
                 // Try to use aggregate snapshot first for the period
                 const aggregateSnapshot = wooAggregateSnapshots.find(s => s.date === goal.start_date);
                 
                 if (aggregateSnapshot && (aggregateSnapshot.metrics as any)?.totalRevenue) {
                   currentValue = (aggregateSnapshot.metrics as any).totalRevenue;
+                  console.log(`[GOAL] Using AGGREGATE snapshot: ${currentValue} RON`);
                 } else {
                   // Fall back to summing daily snapshots
+                  console.log(`[GOAL] No aggregate, summing DAILY snapshots...`);
                   wooDailySnapshots.forEach(s => {
-                    currentValue += (s.metrics as any)?.totalRevenue || 0;
+                    const revenue = (s.metrics as any)?.totalRevenue || 0;
+                    currentValue += revenue;
+                    console.log(`[GOAL] Date ${s.date}: +${revenue} RON (total now: ${currentValue})`);
                   });
                 }
+
+                console.log(`[GOAL] FINAL currentValue: ${currentValue} RON`);
 
                 // Today's change
                 const todaySnapshots = wooDailySnapshots.filter(s => s.date === todayStr);
