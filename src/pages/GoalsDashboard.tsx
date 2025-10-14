@@ -133,34 +133,33 @@ export default function GoalsDashboard() {
           .order('created_at', { ascending: false });
 
         if (snapshots && snapshots.length > 0) {
-          if (snapshots.length > 0) {
-            // Group by date-platform to get latest snapshot per combination
-            const latestByDatePlatform: Record<string, any> = {};
-            snapshots.forEach(s => {
-              const key = `${s.date}-${s.platform}`;
-              if (!latestByDatePlatform[key] || new Date(s.created_at) > new Date(latestByDatePlatform[key].created_at)) {
-                latestByDatePlatform[key] = s;
-              }
-            });
+          // Group by date-platform to get latest snapshot per combination
+          const latestByDatePlatform: Record<string, any> = {};
+          snapshots.forEach(s => {
+            const key = `${s.date}-${s.platform}`;
+            if (!latestByDatePlatform[key] || new Date(s.created_at) > new Date(latestByDatePlatform[key].created_at)) {
+              latestByDatePlatform[key] = s;
+            }
+          });
 
-            const uniqueSnapshots = Object.values(latestByDatePlatform);
+          const uniqueSnapshots = Object.values(latestByDatePlatform);
 
-            // Check if we have aggregate snapshots for this period (for WooCommerce)
-            const wooAggregateSnapshots = uniqueSnapshots.filter(
-              s => s.platform === 'woocommerce' && (s as any).metric_type === 'ecommerce_aggregate'
-            );
-            
-            // Daily WooCommerce/WordPress snapshots
-            const wooDailySnapshots = uniqueSnapshots.filter(
-              s => (s.platform === 'woocommerce' || s.platform === 'wordpress') && 
-                   (s as any).metric_type !== 'ecommerce_aggregate'
-            );
+          // Check if we have aggregate snapshots for this period (for WooCommerce)
+          const wooAggregateSnapshots = uniqueSnapshots.filter(
+            s => s.platform === 'woocommerce' && (s as any).metric_type === 'ecommerce_aggregate'
+          );
+          
+          // Daily WooCommerce/WordPress snapshots
+          const wooDailySnapshots = uniqueSnapshots.filter(
+            s => (s.platform === 'woocommerce' || s.platform === 'wordpress') && 
+                 (s as any).metric_type !== 'ecommerce_aggregate'
+          );
 
-            // Facebook Ads snapshots
-            const fbSnapshots = uniqueSnapshots.filter(s => s.platform === 'facebook_ads');
+          // Facebook Ads snapshots
+          const fbSnapshots = uniqueSnapshots.filter(s => s.platform === 'facebook_ads');
 
-            // Calculate based on metric type
-            switch (goal.metric_type) {
+          // Calculate based on metric type
+          switch (goal.metric_type) {
               case 'revenue': {
                 // Try to use aggregate snapshot first for the period
                 const aggregateSnapshot = wooAggregateSnapshots.find(s => s.date === goal.start_date);
@@ -250,14 +249,15 @@ export default function GoalsDashboard() {
               }
             }
 
-            // Calculate Facebook Spend (for all goals)
-            fbSnapshots.forEach(s => {
-              const metrics = (s.metrics as any);
-              facebookSpend += metrics?.spend || 0;
-            });
+          // Calculate Facebook Spend (for all goals)
+          fbSnapshots.forEach(s => {
+            const metrics = (s.metrics as any);
+            facebookSpend += metrics?.spend || 0;
+          });
 
-            // Calculate ROAS (Return on Ad Spend) - for all goals
-            roas = facebookSpend > 0 ? currentValue / facebookSpend : 0;
+          // Calculate ROAS (Return on Ad Spend) - for all goals
+          roas = facebookSpend > 0 ? currentValue / facebookSpend : 0;
+        }
 
         // Calculate progress
         const progressPercentage = goal.target_value > 0 ? (currentValue / goal.target_value) * 100 : 0;
