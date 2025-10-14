@@ -1159,50 +1159,6 @@ export default function ReportsPage() {
                   )}
                 </div>
               </div>
-
-              <div className="bg-white rounded-lg border border-slate-200 p-3">
-                <h2 className="text-base font-bold text-slate-800 mb-2">Top Products (Period Overview)</h2>
-                <div className="space-y-2">
-                  {metrics.topProducts.slice(0, 5).map((product, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium text-slate-800 text-xs">{product.name}</p>
-                        <p className="text-xs text-slate-500">{product.quantity} units</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-slate-800 text-sm">{product.revenue.toLocaleString()} RON</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-slate-800">Performance Summary</h2>
-                <Calendar className="w-5 h-5 text-slate-400" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-600 mb-2">Conversion Rate</p>
-                  <p className="text-2xl font-bold text-slate-800">
-                    {((metrics.completedOrders / metrics.totalOrders) * 100).toFixed(1)}%
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-600 mb-2">Revenue per Product</p>
-                  <p className="text-2xl font-bold text-slate-800">
-                    {Math.round(metrics.totalRevenue / metrics.totalProducts)} RON
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-600 mb-2">Order Completion Rate</p>
-                  <p className="text-2xl font-bold text-slate-800">
-                    {((metrics.completedOrders / metrics.totalOrders) * 100).toFixed(1)}%
-                  </p>
-                </div>
-              </div>
             </div>
           </>
         ) : (
