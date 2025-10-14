@@ -8,6 +8,7 @@ import ReportsPage from './pages/ReportsPage';
 import AlertsPage from './pages/AlertsPage';
 import SharedReportPage from './pages/SharedReportPage';
 import UserManagementPage from './pages/UserManagementPage';
+import GoalsDashboard from './pages/GoalsDashboard';
 import Sidebar from './components/Sidebar';
 import BackfillBanner from './components/BackfillBanner';
 
@@ -83,6 +84,8 @@ function AppContent() {
         return isSuperAdmin ? <AgencyDashboard onClientSelect={handleClientSelect} /> : <ClientDashboard />;
       case 'client-details':
         return <ClientDashboard clientId={selectedClientId} onBack={handleBackToAgency} />;
+      case 'goals':
+        return <GoalsDashboard />;
       case 'reports':
         return <ReportsPage />;
       case 'alerts':

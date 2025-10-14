@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog, Target } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -40,6 +40,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     ...(isSuperAdmin ? [{ id: 'clients', label: 'Clients', icon: Users }] : []),
+    { id: 'goals', label: 'Goals', icon: Target },
     { id: 'reports', label: 'Reports', icon: FileText },
     { id: 'alerts', label: 'Alerts', icon: Bell },
     ...(isSuperAdmin ? [{ id: 'users', label: 'User Management', icon: UserCog }] : []),

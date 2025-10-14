@@ -315,6 +315,50 @@ export interface Database {
           access_count?: number
         }
       }
+      goals: {
+        Row: {
+          id: string
+          client_id: string
+          metric_type: 'revenue' | 'orders' | 'products' | 'conversions' | 'roas' | 'custom'
+          target_value: number
+          period: 'daily' | 'weekly' | 'monthly' | 'yearly'
+          start_date: string
+          end_date: string
+          label: string | null
+          description: string | null
+          status: 'active' | 'completed' | 'failed' | 'archived'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          metric_type: 'revenue' | 'orders' | 'products' | 'conversions' | 'roas' | 'custom'
+          target_value: number
+          period?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+          start_date: string
+          end_date: string
+          label?: string | null
+          description?: string | null
+          status?: 'active' | 'completed' | 'failed' | 'archived'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          metric_type?: 'revenue' | 'orders' | 'products' | 'conversions' | 'roas' | 'custom'
+          target_value?: number
+          period?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+          start_date?: string
+          end_date?: string
+          label?: string | null
+          description?: string | null
+          status?: 'active' | 'completed' | 'failed' | 'archived'
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
