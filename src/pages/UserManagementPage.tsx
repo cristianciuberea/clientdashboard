@@ -19,6 +19,7 @@ const roleLabels: Record<Profile['role'], string> = {
   super_admin: 'Super Admin',
   manager: 'Manager',
   specialist: 'Specialist',
+  freelancer: 'Freelancer',
   client: 'Client',
 };
 
@@ -26,6 +27,7 @@ const roleDescriptions: Record<Profile['role'], string> = {
   super_admin: 'Acces complet la toate setările și clienții',
   manager: 'Acces la clienții alocați cu drepturi de management',
   specialist: 'Acces la clienții alocați pentru vizualizare și lucru',
+  freelancer: 'Colaborator extern - tracking venituri și proiecte',
   client: 'Acces doar la dashboard-ul propriu',
 };
 
@@ -33,6 +35,7 @@ const roleColors: Record<Profile['role'], string> = {
   super_admin: 'bg-red-100 text-red-700 border-red-200',
   manager: 'bg-blue-100 text-blue-700 border-blue-200',
   specialist: 'bg-green-100 text-green-700 border-green-200',
+  freelancer: 'bg-purple-100 text-purple-700 border-purple-200',
   client: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
@@ -590,7 +593,7 @@ export default function UserManagementPage() {
                     Role *
                   </label>
                   <div className="space-y-2">
-                    {(['super_admin', 'manager', 'specialist', 'client'] as const).map((role) => (
+                    {(['super_admin', 'manager', 'specialist', 'freelancer', 'client'] as const).map((role) => (
                       <label
                         key={role}
                         className={`flex items-start space-x-3 p-3 border-2 rounded-lg cursor-pointer transition ${
@@ -680,7 +683,7 @@ export default function UserManagementPage() {
                     Role *
                   </label>
                   <div className="space-y-2">
-                    {(['super_admin', 'manager', 'specialist', 'client'] as const).map((role) => (
+                    {(['super_admin', 'manager', 'specialist', 'freelancer', 'client'] as const).map((role) => (
                       <label
                         key={role}
                         className={`flex items-start space-x-3 p-3 border-2 rounded-lg cursor-pointer transition ${

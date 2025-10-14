@@ -44,7 +44,7 @@ export interface Database {
           organization_id: string | null
           email: string
           full_name: string
-          role: 'super_admin' | 'manager' | 'specialist' | 'client'
+          role: 'super_admin' | 'manager' | 'specialist' | 'client' | 'freelancer'
           avatar_url: string | null
           preferences: Json
           created_at: string
@@ -55,7 +55,7 @@ export interface Database {
           organization_id?: string | null
           email: string
           full_name: string
-          role?: 'super_admin' | 'manager' | 'specialist' | 'client'
+          role?: 'super_admin' | 'manager' | 'specialist' | 'client' | 'freelancer'
           avatar_url?: string | null
           preferences?: Json
           created_at?: string
@@ -66,7 +66,7 @@ export interface Database {
           organization_id?: string | null
           email?: string
           full_name?: string
-          role?: 'super_admin' | 'manager' | 'specialist' | 'client'
+          role?: 'super_admin' | 'manager' | 'specialist' | 'client' | 'freelancer'
           avatar_url?: string | null
           preferences?: Json
           created_at?: string
@@ -230,6 +230,7 @@ export interface Database {
           expense_date: string
           is_recurring: boolean
           recurring_period: string | null
+          assigned_to_user_id: string | null
           created_by: string | null
           created_at: string
           updated_at: string
@@ -244,6 +245,7 @@ export interface Database {
           expense_date: string
           is_recurring?: boolean
           recurring_period?: string | null
+          assigned_to_user_id?: string | null
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -258,6 +260,7 @@ export interface Database {
           expense_date?: string
           is_recurring?: boolean
           recurring_period?: string | null
+          assigned_to_user_id?: string | null
           created_by?: string | null
           created_at?: string
           updated_at?: string

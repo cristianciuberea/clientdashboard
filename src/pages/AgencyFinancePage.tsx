@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, X, Receipt, Calendar, FileText } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, X, Receipt, FileText, Users as UsersIcon } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 
 type Client = Database['public']['Tables']['clients']['Row'];
 type Income = Database['public']['Tables']['agency_client_income']['Row'];
 type Expense = Database['public']['Tables']['agency_client_expenses']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 type Period = 'this_month' | 'this_year' | 'lifetime' | 'custom';
+type ViewMode = 'by_client' | 'by_team_member';
 
 interface FinancialMetrics {
   totalIncome: number;
@@ -16,9 +18,19 @@ interface FinancialMetrics {
   profitMargin: number;
 }
 
+interface TeamMemberStats {
+  user: Profile;
+  totalEarned: number;
+  projectsCount: number;
+  clients: string[];
+}
+
 export default function AgencyFinancePage() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedTeamMember, setSelectedTeamMember] = useState<Profile | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('by_client');
   const [period, setPeriod] = useState<Period>('this_month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
@@ -38,13 +50,16 @@ export default function AgencyFinancePage() {
 
   useEffect(() => {
     fetchClients();
+    fetchTeamMembers();
   }, []);
 
   useEffect(() => {
-    if (selectedClient) {
+    if (viewMode === 'by_client' && selectedClient) {
       fetchFinancialData();
+    } else if (viewMode === 'by_team_member' && selectedTeamMember) {
+      fetchTeamMemberData();
     }
-  }, [selectedClient, period, customStartDate, customEndDate]);
+  }, [selectedClient, selectedTeamMember, viewMode, period, customStartDate, customEndDate]);
 
   const fetchClients = async () => {
     try {
@@ -58,14 +73,13 @@ export default function AgencyFinancePage() {
         .single();
 
       if (profile?.role === 'super_admin') {
-        // Super admins see all clients
         const { data } = await supabase
           .from('clients')
           .select('*')
           .order('name');
         setClients(data || []);
+        if (data && data.length > 0) setSelectedClient(data[0]);
       } else {
-        // Managers see only their assigned clients
         const { data } = await supabase
           .from('client_users')
           .select('clients(*)')
@@ -74,15 +88,29 @@ export default function AgencyFinancePage() {
         
         const clientsList = data?.map((cu: any) => cu.clients).filter(Boolean) || [];
         setClients(clientsList);
-      }
-
-      if (clients.length > 0 && !selectedClient) {
-        setSelectedClient(clients[0]);
+        if (clientsList.length > 0) setSelectedClient(clientsList[0]);
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTeamMembers = async () => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('role', ['manager', 'specialist', 'freelancer'])
+        .order('full_name');
+      
+      setTeamMembers(data || []);
+      if (data && data.length > 0 && !selectedTeamMember) {
+        setSelectedTeamMember(data[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching team members:', error);
     }
   };
 
@@ -99,7 +127,7 @@ export default function AgencyFinancePage() {
         startDate = new Date(today.getFullYear(), 0, 1);
         break;
       case 'lifetime':
-        startDate = new Date(2000, 0, 1); // Far in the past
+        startDate = new Date(2000, 0, 1);
         break;
       case 'custom':
         if (!customStartDate || !customEndDate) {
@@ -123,7 +151,6 @@ export default function AgencyFinancePage() {
       const { startDate, endDate } = getDateRange();
       if (!startDate || !endDate) return;
 
-      // Fetch income
       const { data: incomeData } = await supabase
         .from('agency_client_income')
         .select('*')
@@ -132,10 +159,9 @@ export default function AgencyFinancePage() {
         .lte('payment_date', endDate)
         .order('payment_date', { ascending: false });
 
-      // Fetch expenses
       const { data: expensesData } = await supabase
         .from('agency_client_expenses')
-        .select('*')
+        .select('*, profiles(full_name, email)')
         .eq('client_id', selectedClient.id)
         .gte('expense_date', startDate)
         .lte('expense_date', endDate)
@@ -144,7 +170,6 @@ export default function AgencyFinancePage() {
       setIncome(incomeData || []);
       setExpenses(expensesData || []);
 
-      // Calculate metrics
       const totalIncome = incomeData?.reduce((sum, i) => 
         i.status === 'received' ? sum + i.amount : sum, 0) || 0;
       const totalExpenses = expensesData?.reduce((sum, e) => sum + e.amount, 0) || 0;
@@ -162,15 +187,39 @@ export default function AgencyFinancePage() {
     }
   };
 
-  const handleAddIncome = async (incomeData: {
-    amount: string;
-    category: string;
-    description: string;
-    invoice_number: string;
-    payment_date: string;
-    payment_method: string;
-    status: string;
-  }) => {
+  const fetchTeamMemberData = async () => {
+    if (!selectedTeamMember) return;
+
+    try {
+      const { startDate, endDate } = getDateRange();
+      if (!startDate || !endDate) return;
+
+      // Fetch expenses where this team member was paid
+      const { data: expensesData } = await supabase
+        .from('agency_client_expenses')
+        .select('*, clients(name)')
+        .eq('assigned_to_user_id', selectedTeamMember.id)
+        .gte('expense_date', startDate)
+        .lte('expense_date', endDate)
+        .order('expense_date', { ascending: false });
+
+      setExpenses(expensesData || []);
+      setIncome([]);
+
+      const totalEarned = expensesData?.reduce((sum, e) => sum + e.amount, 0) || 0;
+
+      setMetrics({
+        totalIncome: 0,
+        totalExpenses: totalEarned,
+        netProfit: 0,
+        profitMargin: 0,
+      });
+    } catch (error) {
+      console.error('Error fetching team member data:', error);
+    }
+  };
+
+  const handleAddIncome = async (formData: any) => {
     if (!selectedClient) return;
 
     try {
@@ -180,34 +229,27 @@ export default function AgencyFinancePage() {
         .from('agency_client_income')
         .insert({
           client_id: selectedClient.id,
-          amount: parseFloat(incomeData.amount),
-          category: incomeData.category,
-          description: incomeData.description || null,
-          invoice_number: incomeData.invoice_number || null,
-          payment_date: incomeData.payment_date,
-          payment_method: incomeData.payment_method || null,
-          status: incomeData.status,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          description: formData.description || null,
+          invoice_number: formData.invoice_number || null,
+          payment_date: formData.payment_date,
+          payment_method: formData.payment_method || null,
+          status: formData.status,
           created_by: user?.id,
         });
 
       if (error) throw error;
 
       setShowAddIncome(false);
-      fetchFinancialData();
+      await fetchFinancialData();
     } catch (error) {
       console.error('Error adding income:', error);
       alert('Eroare la adăugarea încasării');
     }
   };
 
-  const handleAddExpense = async (expenseData: {
-    amount: string;
-    category: string;
-    description: string;
-    expense_date: string;
-    is_recurring: boolean;
-    recurring_period: string;
-  }) => {
+  const handleAddExpense = async (formData: any) => {
     if (!selectedClient) return;
 
     try {
@@ -217,19 +259,20 @@ export default function AgencyFinancePage() {
         .from('agency_client_expenses')
         .insert({
           client_id: selectedClient.id,
-          amount: parseFloat(expenseData.amount),
-          category: expenseData.category,
-          description: expenseData.description || null,
-          expense_date: expenseData.expense_date,
-          is_recurring: expenseData.is_recurring,
-          recurring_period: expenseData.is_recurring ? expenseData.recurring_period : null,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          description: formData.description || null,
+          expense_date: formData.expense_date,
+          is_recurring: formData.is_recurring,
+          recurring_period: formData.is_recurring ? formData.recurring_period : null,
+          assigned_to_user_id: formData.assigned_to_user_id || null,
           created_by: user?.id,
         });
 
       if (error) throw error;
 
       setShowAddExpense(false);
-      fetchFinancialData();
+      await fetchFinancialData();
     } catch (error) {
       console.error('Error adding expense:', error);
       alert('Eroare la adăugarea cheltuielii');
@@ -256,7 +299,7 @@ export default function AgencyFinancePage() {
     if (!confirm('Sigur vrei să ștergi această cheltuială?')) return;
 
     try {
-      const { error } = await supabase
+      const { error} = await supabase
         .from('agency_client_expenses')
         .delete()
         .eq('id', id);
@@ -299,10 +342,36 @@ export default function AgencyFinancePage() {
               <DollarSign className="w-8 h-8 text-blue-600" />
               Agency Finance
             </h1>
-            <p className="text-slate-600 mt-1">Urmărește încasările și cheltuielile pe client</p>
+            <p className="text-slate-600 mt-1">Urmărește încasările și cheltuielile pe client sau per membru al echipei</p>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* View Mode Toggle */}
+            <div className="flex gap-2 bg-slate-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('by_client')}
+                className={`px-3 py-2 rounded-md transition text-sm font-medium ${
+                  viewMode === 'by_client'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <Receipt className="w-4 h-4 inline mr-1" />
+                Pe Client
+              </button>
+              <button
+                onClick={() => setViewMode('by_team_member')}
+                className={`px-3 py-2 rounded-md transition text-sm font-medium ${
+                  viewMode === 'by_team_member'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <UsersIcon className="w-4 h-4 inline mr-1" />
+                Per Membru
+              </button>
+            </div>
+
             {/* Period Selector */}
             <div className="flex gap-2">
               <button
@@ -337,181 +406,304 @@ export default function AgencyFinancePage() {
               </button>
             </div>
 
-            {/* Client Selector */}
-            <select
-              value={selectedClient?.id || ''}
-              onChange={(e) => {
-                const client = clients.find(c => c.id === e.target.value);
-                setSelectedClient(client || null);
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
+            {/* Selector (Client or Team Member) */}
+            {viewMode === 'by_client' ? (
+              <select
+                value={selectedClient?.id || ''}
+                onChange={(e) => {
+                  const client = clients.find(c => c.id === e.target.value);
+                  setSelectedClient(client || null);
+                }}
+                className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={selectedTeamMember?.id || ''}
+                onChange={(e) => {
+                  const member = teamMembers.find(m => m.id === e.target.value);
+                  setSelectedTeamMember(member || null);
+                }}
+                className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.full_name} ({member.role})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
-        {selectedClient && (
+        {viewMode === 'by_client' && selectedClient && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
               Vizualizezi date pentru: <strong>{selectedClient.name}</strong> • {getPeriodLabel()}
             </p>
           </div>
         )}
+
+        {viewMode === 'by_team_member' && selectedTeamMember && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <p className="text-sm text-purple-800">
+              Vizualizezi câștiguri pentru: <strong>{selectedTeamMember.full_name}</strong> ({selectedTeamMember.role}) • {getPeriodLabel()}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-green-700">Total Încasări</p>
-            <TrendingUp className="w-5 h-5 text-green-600" />
+      {viewMode === 'by_client' ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-green-700">Total Încasări</p>
+              <TrendingUp className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-3xl font-bold text-green-800">{metrics.totalIncome.toFixed(2)} RON</p>
           </div>
-          <p className="text-3xl font-bold text-green-800">{metrics.totalIncome.toFixed(2)} RON</p>
-        </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-red-700">Total Cheltuieli</p>
-            <TrendingDown className="w-5 h-5 text-red-600" />
+          <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-red-700">Total Cheltuieli</p>
+              <TrendingDown className="w-5 h-5 text-red-600" />
+            </div>
+            <p className="text-3xl font-bold text-red-800">{metrics.totalExpenses.toFixed(2)} RON</p>
           </div>
-          <p className="text-3xl font-bold text-red-800">{metrics.totalExpenses.toFixed(2)} RON</p>
-        </div>
 
-        <div className={`bg-gradient-to-br border rounded-xl p-6 ${
-          metrics.netProfit >= 0
-            ? 'from-blue-50 to-blue-100 border-blue-200'
-            : 'from-red-50 to-red-100 border-red-200'
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <p className={`text-sm font-medium ${metrics.netProfit >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-              Profit Net
+          <div className={`bg-gradient-to-br border rounded-xl p-6 ${
+            metrics.netProfit >= 0
+              ? 'from-blue-50 to-blue-100 border-blue-200'
+              : 'from-red-50 to-red-100 border-red-200'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-sm font-medium ${metrics.netProfit >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                Profit Net
+              </p>
+              <DollarSign className={`w-5 h-5 ${metrics.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
+            </div>
+            <p className={`text-3xl font-bold ${metrics.netProfit >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
+              {metrics.netProfit.toFixed(2)} RON
             </p>
-            <DollarSign className={`w-5 h-5 ${metrics.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
           </div>
-          <p className={`text-3xl font-bold ${metrics.netProfit >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
-            {metrics.netProfit.toFixed(2)} RON
-          </p>
-        </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-purple-700">Marjă Profit</p>
-            <Receipt className="w-5 h-5 text-purple-600" />
-          </div>
-          <p className="text-3xl font-bold text-purple-800">{metrics.profitMargin.toFixed(1)}%</p>
-        </div>
-      </div>
-
-      {/* Income & Expenses Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Income Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="p-6 border-b border-slate-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                Încasări
-              </h2>
-              <button
-                onClick={() => setShowAddIncome(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Adaugă Încasare
-              </button>
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-purple-700">Marjă Profit</p>
+              <Receipt className="w-5 h-5 text-purple-600" />
             </div>
+            <p className="text-3xl font-bold text-purple-800">{metrics.profitMargin.toFixed(1)}%</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-blue-700">Total Câștigat</p>
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-3xl font-bold text-blue-800">{metrics.totalExpenses.toFixed(2)} RON</p>
           </div>
 
-          <div className="p-6">
-            {income.length > 0 ? (
-              <div className="space-y-3">
-                {income.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start justify-between p-4 bg-green-50 rounded-lg border border-green-200"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-slate-800">{item.category}</p>
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${
-                          item.status === 'received' 
-                            ? 'bg-green-100 text-green-700'
-                            : item.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          {item.status}
-                        </span>
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-purple-700">Nr. Proiecte</p>
+              <Receipt className="w-5 h-5 text-purple-600" />
+            </div>
+            <p className="text-3xl font-bold text-purple-800">{expenses.length}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-green-700">Clienți Unici</p>
+              <UsersIcon className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-3xl font-bold text-green-800">
+              {[...new Set(expenses.map(e => (e as any).clients?.name).filter(Boolean))].length}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Income & Expenses Tables or Team Member Details */}
+      {viewMode === 'by_client' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Income Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  Încasări
+                </h2>
+                <button
+                  onClick={() => setShowAddIncome(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adaugă Încasare
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {income.length > 0 ? (
+                <div className="space-y-3">
+                  {income.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between p-4 bg-green-50 rounded-lg border border-green-200"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-slate-800">{item.category}</p>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            item.status === 'received' 
+                              ? 'bg-green-100 text-green-700'
+                              : item.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {item.status}
+                          </span>
+                        </div>
+                        {item.description && (
+                          <p className="text-sm text-slate-600">{item.description}</p>
+                        )}
+                        {item.invoice_number && (
+                          <p className="text-xs text-slate-500 mt-1">Factură: {item.invoice_number}</p>
+                        )}
+                        <p className="text-xs text-slate-500 mt-1">
+                          {new Date(item.payment_date).toLocaleDateString('ro-RO')}
+                        </p>
                       </div>
-                      {item.description && (
-                        <p className="text-sm text-slate-600">{item.description}</p>
-                      )}
-                      {item.invoice_number && (
-                        <p className="text-xs text-slate-500 mt-1">Factură: {item.invoice_number}</p>
-                      )}
-                      <p className="text-xs text-slate-500 mt-1">
-                        {new Date(item.payment_date).toLocaleDateString('ro-RO')}
-                      </p>
+                      <div className="flex items-center gap-3 ml-4">
+                        <p className="text-lg font-bold text-green-700 min-w-[100px] text-right">
+                          {item.amount.toFixed(2)} RON
+                        </p>
+                        <button
+                          onClick={() => handleDeleteIncome(item.id)}
+                          className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 ml-4">
-                      <p className="text-lg font-bold text-green-700 min-w-[100px] text-right">
-                        {item.amount.toFixed(2)} RON
-                      </p>
-                      <button
-                        onClick={() => handleDeleteIncome(item.id)}
-                        className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-slate-500">
+                  <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>Nu există încasări în această perioadă</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Expenses Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                  Cheltuieli
+                </h2>
+                <button
+                  onClick={() => setShowAddExpense(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adaugă Cheltuială
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {expenses.length > 0 ? (
+                <div className="space-y-3">
+                  {expenses.map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between p-4 bg-red-50 rounded-lg border border-red-200"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-slate-800">{item.category}</p>
+                          {item.is_recurring && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              {item.recurring_period}
+                            </span>
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="text-sm text-slate-600">{item.description}</p>
+                        )}
+                        {item.profiles && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            👤 {item.profiles.full_name}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500 mt-1">
+                          {new Date(item.expense_date).toLocaleDateString('ro-RO')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 ml-4">
+                        <p className="text-lg font-bold text-red-700 min-w-[100px] text-right">
+                          {item.amount.toFixed(2)} RON
+                        </p>
+                        <button
+                          onClick={() => handleDeleteExpense(item.id)}
+                          className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-slate-500">
-                <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p>Nu există încasări în această perioadă</p>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-slate-500">
+                  <Receipt className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>Nu există cheltuieli în această perioadă</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Expenses Table */}
+      ) : (
+        // Team Member View
         <div className="bg-white rounded-xl shadow-sm border border-slate-200">
           <div className="p-6 border-b border-slate-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-red-600" />
-                Cheltuieli
-              </h2>
-              <button
-                onClick={() => setShowAddExpense(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Adaugă Cheltuială
-              </button>
-            </div>
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-blue-600" />
+              Plăți Primite
+            </h2>
           </div>
 
           <div className="p-6">
             {expenses.length > 0 ? (
               <div className="space-y-3">
-                {expenses.map((item) => (
+                {expenses.map((item: any) => (
                   <div
                     key={item.id}
-                    className="flex items-start justify-between p-4 bg-red-50 rounded-lg border border-red-200"
+                    className="flex items-start justify-between p-4 bg-blue-50 rounded-lg border border-blue-200"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-semibold text-slate-800">{item.category}</p>
+                        {item.clients && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                            {item.clients.name}
+                          </span>
+                        )}
                         {item.is_recurring && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
                             {item.recurring_period}
                           </span>
                         )}
@@ -524,15 +716,9 @@ export default function AgencyFinancePage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3 ml-4">
-                      <p className="text-lg font-bold text-red-700 min-w-[100px] text-right">
+                      <p className="text-lg font-bold text-blue-700 min-w-[100px] text-right">
                         {item.amount.toFixed(2)} RON
                       </p>
-                      <button
-                        onClick={() => handleDeleteExpense(item.id)}
-                        className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -540,14 +726,14 @@ export default function AgencyFinancePage() {
             ) : (
               <div className="text-center py-12 text-slate-500">
                 <Receipt className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p>Nu există cheltuieli în această perioadă</p>
+                <p>Nu există plăți în această perioadă</p>
               </div>
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Add Income Modal */}
+      {/* Modals */}
       {showAddIncome && (
         <AddIncomeModal
           onClose={() => setShowAddIncome(false)}
@@ -555,11 +741,11 @@ export default function AgencyFinancePage() {
         />
       )}
 
-      {/* Add Expense Modal */}
-      {showAddExpense && (
+      {showAddExpense && selectedClient && (
         <AddExpenseModal
           onClose={() => setShowAddExpense(false)}
           onAdd={handleAddExpense}
+          teamMembers={teamMembers}
         />
       )}
     </div>
@@ -572,7 +758,7 @@ function AddIncomeModal({
   onAdd 
 }: { 
   onClose: () => void; 
-  onAdd: (data: any) => void;
+  onAdd: (data: any) => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
     amount: '',
@@ -583,14 +769,21 @@ function AddIncomeModal({
     payment_method: 'bank_transfer',
     status: 'received',
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.amount || !formData.category) {
       alert('Completează suma și categoria!');
       return;
     }
-    onAdd(formData);
+    
+    setSubmitting(true);
+    try {
+      await onAdd(formData);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -598,7 +791,7 @@ function AddIncomeModal({
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <h2 className="text-xl font-bold text-slate-800">Adaugă Încasare</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg" type="button">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -700,14 +893,16 @@ function AddIncomeModal({
               type="button"
               onClick={onClose}
               className="flex-1 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              disabled={submitting}
             >
               Anulează
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium disabled:bg-slate-300"
             >
-              Adaugă Încasare
+              {submitting ? 'Se adaugă...' : 'Adaugă Încasare'}
             </button>
           </div>
         </form>
@@ -719,10 +914,12 @@ function AddIncomeModal({
 // Add Expense Modal Component
 function AddExpenseModal({ 
   onClose, 
-  onAdd 
+  onAdd,
+  teamMembers
 }: { 
   onClose: () => void; 
-  onAdd: (data: any) => void;
+  onAdd: (data: any) => Promise<void>;
+  teamMembers: Profile[];
 }) {
   const [formData, setFormData] = useState({
     amount: '',
@@ -731,15 +928,23 @@ function AddExpenseModal({
     expense_date: new Date().toISOString().split('T')[0],
     is_recurring: false,
     recurring_period: 'monthly',
+    assigned_to_user_id: '',
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.amount || !formData.category) {
       alert('Completează suma și categoria!');
       return;
     }
-    onAdd(formData);
+    
+    setSubmitting(true);
+    try {
+      await onAdd(formData);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -747,7 +952,7 @@ function AddExpenseModal({
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <h2 className="text-xl font-bold text-slate-800">Adaugă Cheltuială</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg" type="button">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -795,6 +1000,30 @@ function AddExpenseModal({
             </select>
           </div>
 
+          {/* Assign to Team Member (for salaries or payments) */}
+          {(formData.category === 'salaries' || formData.category === 'ads_management') && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Atribuie la Membru (opțional)
+              </label>
+              <select
+                value={formData.assigned_to_user_id}
+                onChange={(e) => setFormData({ ...formData, assigned_to_user_id: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Fără atribuire --</option>
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.full_name} ({member.role})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                Selectează membrul echipei care primește această plată pentru tracking individual
+              </p>
+            </div>
+          )}
+
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
               <input
@@ -834,14 +1063,16 @@ function AddExpenseModal({
               type="button"
               onClick={onClose}
               className="flex-1 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              disabled={submitting}
             >
               Anulează
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium disabled:bg-slate-300"
             >
-              Adaugă Cheltuială
+              {submitting ? 'Se adaugă...' : 'Adaugă Cheltuială'}
             </button>
           </div>
         </form>
@@ -849,4 +1080,3 @@ function AddExpenseModal({
     </div>
   );
 }
-
