@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2, AlertTriangle, X, Edit2 } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import type { Database } from '../lib/database.types';
 
@@ -23,6 +23,8 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
   const [showAddClient, setShowAddClient] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<string>('');
 
   useEffect(() => {
     fetchClients();
@@ -41,6 +43,31 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
       console.error('Error fetching clients:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+    setMonthlyExpenses(client.monthly_expenses?.toString() || '0');
+  };
+
+  const handleSaveExpenses = async () => {
+    if (!editingClient) return;
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ monthly_expenses: parseFloat(monthlyExpenses) || 0 })
+        .eq('id', editingClient.id);
+
+      if (error) throw error;
+
+      alert('Cheltuieli lunare actualizate cu succes!');
+      setEditingClient(null);
+      fetchClients();
+    } catch (error) {
+      console.error('Error updating expenses:', error);
+      alert('Eroare la actualizarea cheltuielilor');
     }
   };
 
@@ -300,16 +327,28 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
                         {new Date(client.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClient(client);
-                          }}
-                          className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition inline-flex items-center justify-center"
-                          title="Delete Client"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClient(client);
+                            }}
+                            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition inline-flex items-center justify-center"
+                            title="Edit Monthly Expenses"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClient(client);
+                            }}
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition inline-flex items-center justify-center"
+                            title="Delete Client"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -382,6 +421,67 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
                 Delete Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Monthly Expenses Modal */}
+      {editingClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Cheltuieli Lunare</h2>
+                <p className="text-sm text-slate-600">{editingClient.name}</p>
+              </div>
+              <button
+                onClick={() => setEditingClient(null)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Cheltuieli Lunare (RON)
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Salarii, chirie, utilități, și alte costuri fixe lunare pentru calculul profitului net.
+                </p>
+                <input
+                  type="number"
+                  value={monthlyExpenses}
+                  onChange={(e) => setMonthlyExpenses(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Profit Net</strong> = Revenue - Facebook Ads - Cheltuieli Lunare
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
+              <button
+                onClick={() => setEditingClient(null)}
+                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={handleSaveExpenses}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
+              >
+                Salvează
               </button>
             </div>
           </div>
