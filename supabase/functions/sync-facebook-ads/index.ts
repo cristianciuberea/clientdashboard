@@ -9,11 +9,16 @@ const corsHeaders = {
 interface FacebookAdsMetrics {
   spend: number;
   impressions: number;
-  clicks: number;
+  clicks: number; // Total clicks (kept for backward compatibility)
+  link_clicks: number; // Inline link clicks (what we actually want)
+  landing_page_views: number; // Landing page views
   conversions: number;
   ctr: number;
   cpc: number;
   cpm: number;
+  cost_per_link_click: number; // Cost per link click (not total clicks)
+  landing_page_view_rate: number; // Landing page views / link clicks
+  conversion_rate: number; // Conversions / landing page views * 100
 }
 
 Deno.serve(async (req: Request) => {
@@ -55,7 +60,8 @@ Deno.serve(async (req: Request) => {
     const dateFrom = date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const dateTo = date_to || new Date().toISOString().split('T')[0];
 
-    const fields = 'spend,impressions,clicks,actions,ctr,cpc,cpm';
+    // Request detailed fields including link clicks and landing page views
+    const fields = 'spend,impressions,clicks,inline_link_clicks,actions,ctr,cpc,cpm';
     const timeRange = JSON.stringify({ since: dateFrom, until: dateTo });
     const fbApiUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=${fields}&time_range=${timeRange}&time_increment=1&access_token=${accessToken}`;
 
@@ -78,16 +84,38 @@ Deno.serve(async (req: Request) => {
     const metricsToInsert = [];
 
     for (const dayData of fbData.data) {
+      // Extract conversions (purchases)
       const conversions = dayData.actions?.find((a: any) => a.action_type === 'purchase')?.value || 0;
+      
+      // Extract landing page views from actions
+      const landingPageViews = dayData.actions?.find((a: any) => a.action_type === 'landing_page_view')?.value || 0;
+
+      // Parse values
+      const spend = parseFloat(dayData.spend || 0);
+      const impressions = parseInt(dayData.impressions || 0);
+      const clicks = parseInt(dayData.clicks || 0);
+      const linkClicks = parseInt(dayData.inline_link_clicks || 0);
+      const lpViews = parseInt(landingPageViews);
+      const conversionsNum = parseInt(conversions);
+
+      // Calculate metrics
+      const costPerLinkClick = linkClicks > 0 ? spend / linkClicks : 0;
+      const landingPageViewRate = linkClicks > 0 ? (lpViews / linkClicks) * 100 : 0;
+      const conversionRate = lpViews > 0 ? (conversionsNum / lpViews) * 100 : 0;
 
       const metrics: FacebookAdsMetrics = {
-        spend: parseFloat(dayData.spend || 0),
-        impressions: parseInt(dayData.impressions || 0),
-        clicks: parseInt(dayData.clicks || 0),
-        conversions: parseInt(conversions),
+        spend,
+        impressions,
+        clicks, // Keep total clicks for reference
+        link_clicks: linkClicks,
+        landing_page_views: lpViews,
+        conversions: conversionsNum,
         ctr: parseFloat(dayData.ctr || 0),
-        cpc: parseFloat(dayData.cpc || 0),
+        cpc: parseFloat(dayData.cpc || 0), // Original CPC from Facebook
         cpm: parseFloat(dayData.cpm || 0),
+        cost_per_link_click: costPerLinkClick,
+        landing_page_view_rate: landingPageViewRate,
+        conversion_rate: conversionRate,
       };
 
       metricsToInsert.push({

@@ -54,10 +54,15 @@ interface AggregatedMetrics {
     spend: number;
     impressions: number;
     clicks: number;
+    link_clicks: number;
+    landing_page_views: number;
     conversions: number;
     ctr: number;
     cpc: number;
     cpm: number;
+    cost_per_link_click: number;
+    landing_page_view_rate: number;
+    conversion_rate: number;
     roas: number;
   };
 }
@@ -265,10 +270,15 @@ export default function ReportsPage() {
                 spend: currentSpend,
                 impressions: snapshotMetrics.impressions || 0,
                 clicks: snapshotMetrics.clicks || 0,
+                link_clicks: snapshotMetrics.link_clicks || 0,
+                landing_page_views: snapshotMetrics.landing_page_views || 0,
                 conversions: snapshotMetrics.conversions || 0,
                 ctr: snapshotMetrics.ctr || 0,
                 cpc: snapshotMetrics.cpc || 0,
-                cpm: snapshotMetrics.cpm || 0
+                cpm: snapshotMetrics.cpm || 0,
+                cost_per_link_click: snapshotMetrics.cost_per_link_click || 0,
+                landing_page_view_rate: snapshotMetrics.landing_page_view_rate || 0,
+                conversion_rate: snapshotMetrics.conversion_rate || 0
               };
             }
           } else {
@@ -502,6 +512,8 @@ export default function ReportsPage() {
         let fbSpend = 0;
         let fbImpressions = 0;
         let fbClicks = 0;
+        let fbLinkClicks = 0;
+        let fbLandingPageViews = 0;
         let fbConversions = 0;
         let fbDataCount = 0;
 
@@ -511,21 +523,33 @@ export default function ReportsPage() {
           : Object.entries(fbDailyData);
 
         for (const [date, dayData] of fbDatesToInclude) {
-          fbSpend += dayData.spend;
-          fbImpressions += dayData.impressions;
-          fbClicks += dayData.clicks;
-          fbConversions += dayData.conversions;
+          fbSpend += dayData.spend || 0;
+          fbImpressions += dayData.impressions || 0;
+          fbClicks += dayData.clicks || 0;
+          fbLinkClicks += dayData.link_clicks || 0;
+          fbLandingPageViews += dayData.landing_page_views || 0;
+          fbConversions += dayData.conversions || 0;
           fbDataCount++;
         }
+
+        // Calculate aggregated metrics
+        const costPerLinkClick = fbLinkClicks > 0 ? fbSpend / fbLinkClicks : 0;
+        const landingPageViewRate = fbLinkClicks > 0 ? (fbLandingPageViews / fbLinkClicks) * 100 : 0;
+        const conversionRate = fbLandingPageViews > 0 ? (fbConversions / fbLandingPageViews) * 100 : 0;
 
         const facebookAds = fbDataCount > 0 ? {
           spend: fbSpend,
           impressions: fbImpressions,
           clicks: fbClicks,
+          link_clicks: fbLinkClicks,
+          landing_page_views: fbLandingPageViews,
           conversions: fbConversions,
           ctr: fbClicks > 0 && fbImpressions > 0 ? (fbClicks / fbImpressions) * 100 : 0,
           cpc: fbClicks > 0 ? fbSpend / fbClicks : 0,
           cpm: fbImpressions > 0 ? (fbSpend / fbImpressions) * 1000 : 0,
+          cost_per_link_click: costPerLinkClick,
+          landing_page_view_rate: landingPageViewRate,
+          conversion_rate: conversionRate,
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
         } : undefined;
 
@@ -988,12 +1012,35 @@ export default function ReportsPage() {
                     <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.impressions.toLocaleString()}</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">Clicks</p>
-                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.clicks.toLocaleString()}</p>
+                    <p className="text-xs text-slate-600 mb-1">Link Clicks</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.link_clicks.toLocaleString()}</p>
+                    <p className="text-xs text-slate-500 mt-1">Inline link clicks</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">Landing Page Views</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.landing_page_views.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">LP View Rate</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.landing_page_view_rate.toFixed(2)}%</p>
+                    <p className="text-xs text-slate-500 mt-1">LP views / link clicks</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 border border-blue-200">
                     <p className="text-xs text-slate-600 mb-1">Conversions</p>
                     <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.conversions}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 border border-purple-200 bg-purple-50">
+                    <p className="text-xs text-slate-600 mb-1">Conversion Rate</p>
+                    <p className="text-lg font-bold text-purple-700">{metrics.facebookAds.conversion_rate.toFixed(2)}%</p>
+                    <p className="text-xs text-slate-500 mt-1">Conversions / LP views</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 border border-blue-200">
+                    <p className="text-xs text-slate-600 mb-1">CPM</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cpm.toFixed(2)} RON</p>
+                    <p className="text-xs text-slate-500 mt-1">Cost per 1000 impressions</p>
                   </div>
                 </div>
 
@@ -1004,14 +1051,14 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500 mt-1">Click-through rate</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">CPC</p>
-                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cpc.toFixed(2)} RON</p>
-                    <p className="text-xs text-slate-500 mt-1">Cost per click</p>
+                    <p className="text-xs text-slate-600 mb-1">Cost per Link Click</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cost_per_link_click.toFixed(2)} RON</p>
+                    <p className="text-xs text-slate-500 mt-1">Spend / link clicks</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 border border-blue-200">
-                    <p className="text-xs text-slate-600 mb-1">CPM</p>
-                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cpm.toFixed(2)} RON</p>
-                    <p className="text-xs text-slate-500 mt-1">Cost per 1000 impressions</p>
+                    <p className="text-xs text-slate-600 mb-1">CPC (Total)</p>
+                    <p className="text-lg font-bold text-slate-800">{metrics.facebookAds.cpc.toFixed(2)} RON</p>
+                    <p className="text-xs text-slate-500 mt-1">Cost per all clicks</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 border border-green-200 bg-green-50">
                     <p className="text-xs text-slate-600 mb-1">ROAS</p>
