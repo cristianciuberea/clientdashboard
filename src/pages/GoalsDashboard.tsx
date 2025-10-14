@@ -120,6 +120,8 @@ export default function GoalsDashboard() {
         // Calculate current value based on metric type
         let currentValue = 0;
         let todayChange = 0;
+        let facebookSpend = 0;
+        let roas = 0;
 
         // Fetch snapshots for the goal period ONLY (avoids Supabase 1000-row limit)
         const { data: snapshots } = await supabase
@@ -247,18 +249,15 @@ export default function GoalsDashboard() {
                 break;
               }
             }
-          }
-        }
 
-        // Calculate Facebook Spend
-        let facebookSpend = 0;
-        fbSnapshots.forEach(s => {
-          const metrics = (s.metrics as any);
-          facebookSpend += metrics?.spend || 0;
-        });
+            // Calculate Facebook Spend (for all goals)
+            fbSnapshots.forEach(s => {
+              const metrics = (s.metrics as any);
+              facebookSpend += metrics?.spend || 0;
+            });
 
-        // Calculate ROAS (Return on Ad Spend)
-        const roas = facebookSpend > 0 ? currentValue / facebookSpend : 0;
+            // Calculate ROAS (Return on Ad Spend) - for all goals
+            roas = facebookSpend > 0 ? currentValue / facebookSpend : 0;
 
         // Calculate progress
         const progressPercentage = goal.target_value > 0 ? (currentValue / goal.target_value) * 100 : 0;
