@@ -90,6 +90,7 @@ export default function IntegrationsPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformConfig | null>(null);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillProgress, setBackfillProgress] = useState({ current: 0, total: 0, currentDate: '', success: 0, failed: 0 });
+  const [testingSyncScheduler, setTestingSyncScheduler] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -307,6 +308,44 @@ export default function IntegrationsPage() {
     setShowAddModal(true);
   };
 
+  const handleTestSyncScheduler = async () => {
+    setTestingSyncScheduler(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-scheduler`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Auto Sync Test Complete!\n\nSynced: ${result.synced || 0}\nFailed: ${result.failed || 0}\nSkipped: ${result.skipped || 0}\n\nRefresh the page to see updated "Last Sync" times.`);
+        
+        // Refresh integrations to see updated last_sync_at
+        if (selectedClient) {
+          fetchIntegrations(selectedClient.id);
+        }
+      } else {
+        throw new Error(result.error || 'Sync scheduler test failed');
+      }
+    } catch (error: any) {
+      console.error('Error testing sync scheduler:', error);
+      alert(`Sync scheduler test failed: ${error.message}`);
+    } finally {
+      setTestingSyncScheduler(false);
+    }
+  };
+
   const getIntegrationStatus = (platformId: string) => {
     return integrations.find(i => i.platform === platformId);
   };
@@ -331,22 +370,43 @@ export default function IntegrationsPage() {
             <p className="text-sm text-slate-600">Connect and manage your marketing platforms</p>
           </div>
 
-          {clients.length > 1 && (
-            <select
-              value={selectedClient?.id || ''}
-              onChange={(e) => {
-                const client = clients.find(c => c.id === e.target.value);
-                setSelectedClient(client || null);
-              }}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleTestSyncScheduler}
+              disabled={testingSyncScheduler}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition text-sm font-medium disabled:bg-slate-300 disabled:cursor-not-allowed"
+              title="Test auto-sync manually"
             >
-              {clients.map(client => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-          )}
+              {testingSyncScheduler ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Testing...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Test Auto Sync</span>
+                </>
+              )}
+            </button>
+
+            {clients.length > 1 && (
+              <select
+                value={selectedClient?.id || ''}
+                onChange={(e) => {
+                  const client = clients.find(c => c.id === e.target.value);
+                  setSelectedClient(client || null);
+                }}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
 
         {selectedClient && (
@@ -452,14 +512,36 @@ export default function IntegrationsPage() {
                 )}
 
                 {integration?.last_sync_at && (
-                  <p className="text-xs text-slate-500 mt-3">
-                    Last synced: {new Date(integration.last_sync_at).toLocaleString()}
+                  <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                    <p className="text-xs text-green-700 font-medium">
+                      ✓ Last synced: {new Date(integration.last_sync_at).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-green-600 mt-0.5">
+                      {(() => {
+                        const now = Date.now();
+                        const lastSync = new Date(integration.last_sync_at).getTime();
+                        const diffMs = now - lastSync;
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const diffHours = Math.floor(diffMs / 3600000);
+                        
+                        if (diffMins < 1) return 'Just now';
+                        if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+                        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+                        return `${Math.floor(diffHours / 24)} day${Math.floor(diffHours / 24) > 1 ? 's' : ''} ago`;
+                      })()}
+                    </p>
+                  </div>
+                )}
+
+                {!integration?.last_sync_at && isConnected && (
+                  <p className="text-xs text-yellow-600 mt-3 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    ⚠️ Never synced - Auto sync will run soon
                   </p>
                 )}
 
                 {integration?.error_message && (
-                  <p className="text-xs text-red-600 mt-2">
-                    Error: {integration.error_message}
+                  <p className="text-xs text-red-600 mt-2 bg-red-50 border border-red-200 rounded p-2">
+                    ✗ Error: {integration.error_message}
                   </p>
                 )}
               </div>
