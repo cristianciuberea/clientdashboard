@@ -172,6 +172,97 @@ export interface Database {
           updated_at?: string
         }
       }
+      agency_client_income: {
+        Row: {
+          id: string
+          client_id: string
+          amount: number
+          currency: string
+          category: string
+          description: string | null
+          invoice_number: string | null
+          payment_date: string
+          payment_method: string | null
+          status: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          amount: number
+          currency?: string
+          category: string
+          description?: string | null
+          invoice_number?: string | null
+          payment_date: string
+          payment_method?: string | null
+          status?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          amount?: number
+          currency?: string
+          category?: string
+          description?: string | null
+          invoice_number?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          status?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      agency_client_expenses: {
+        Row: {
+          id: string
+          client_id: string
+          amount: number
+          currency: string
+          category: string
+          description: string | null
+          expense_date: string
+          is_recurring: boolean
+          recurring_period: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          amount: number
+          currency?: string
+          category: string
+          description?: string | null
+          expense_date: string
+          is_recurring?: boolean
+          recurring_period?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          amount?: number
+          currency?: string
+          category?: string
+          description?: string | null
+          expense_date?: string
+          is_recurring?: boolean
+          recurring_period?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       integrations: {
         Row: {
           id: string

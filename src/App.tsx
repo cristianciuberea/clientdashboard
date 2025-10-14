@@ -9,6 +9,7 @@ import AlertsPage from './pages/AlertsPage';
 import SharedReportPage from './pages/SharedReportPage';
 import UserManagementPage from './pages/UserManagementPage';
 import GoalsDashboard from './pages/GoalsDashboard';
+import AgencyFinancePage from './pages/AgencyFinancePage';
 import Sidebar from './components/Sidebar';
 import BackfillBanner from './components/BackfillBanner';
 
@@ -86,6 +87,8 @@ function AppContent() {
         return <ClientDashboard clientId={selectedClientId} onBack={handleBackToAgency} />;
       case 'goals':
         return <GoalsDashboard />;
+      case 'finance':
+        return <AgencyFinancePage />;
       case 'reports':
         return <ReportsPage />;
       case 'alerts':
