@@ -16,6 +16,8 @@ interface GoalWithProgress extends Goal {
   facebook_spend: number;
   roas: number;
   expected_progress: number;
+  gross_profit: number;
+  net_profit: number;
 }
 
 const metricLabels: Record<Goal['metric_type'], string> = {
@@ -92,6 +94,17 @@ export default function GoalsDashboard() {
   const fetchGoalsWithProgress = useCallback(async (clientId: string) => {
     try {
       setLoading(true);
+
+      // Fetch client data for monthly expenses
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('monthly_expenses')
+        .eq('id', clientId)
+        .single();
+
+      if (clientError) throw clientError;
+
+      const monthlyExpenses = clientData?.monthly_expenses || 0;
 
       // Fetch goals
       const { data: goalsData, error: goalsError } = await supabase
@@ -276,6 +289,10 @@ export default function GoalsDashboard() {
         const expectedProgress = daysPassed > 0 ? (daysPassed / totalDays) * 100 : 0;
         const isOnTrack = progressPercentage >= expectedProgress * 0.9; // 90% tolerance
 
+        // Calculate profit metrics
+        const grossProfit = currentValue - facebookSpend; // Revenue - Ad Costs
+        const netProfit = grossProfit - monthlyExpenses;  // Gross Profit - Fixed Expenses
+
         goalsWithProgress.push({
           ...goal,
           current_value: currentValue,
@@ -287,6 +304,8 @@ export default function GoalsDashboard() {
           facebook_spend: facebookSpend,
           roas: roas,
           expected_progress: expectedProgress,
+          gross_profit: grossProfit,
+          net_profit: netProfit,
         });
       }
 
@@ -558,7 +577,7 @@ export default function GoalsDashboard() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                     <p className="text-xs text-slate-600 mb-1">Days Remaining</p>
                     <p className="text-lg font-bold text-slate-800">{goal.days_remaining}</p>
@@ -591,6 +610,22 @@ export default function GoalsDashboard() {
                     <p className="text-xs text-slate-600 mb-1">ROAS</p>
                     <p className="text-lg font-bold text-green-700">
                       {goal.roas.toFixed(2)}x
+                    </p>
+                  </div>
+                  <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-200">
+                    <p className="text-xs text-slate-600 mb-1">Profit Brut</p>
+                    <p className={`text-lg font-bold ${
+                      goal.gross_profit >= 0 ? 'text-cyan-700' : 'text-red-600'
+                    }`}>
+                      {goal.gross_profit.toFixed(2)} RON
+                    </p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                    <p className="text-xs text-slate-600 mb-1">Profit Net</p>
+                    <p className={`text-lg font-bold ${
+                      goal.net_profit >= 0 ? 'text-emerald-700' : 'text-red-600'
+                    }`}>
+                      {goal.net_profit.toFixed(2)} RON
                     </p>
                   </div>
                 </div>
