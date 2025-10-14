@@ -465,21 +465,17 @@ export default function GoalsDashboard() {
                     <div className="text-right">
                       <div className={`text-2xl font-bold ${
                         goal.progress_percentage >= 100 ? 'text-green-600' :
-                        goal.is_on_track ? 'text-blue-600' : 'text-orange-600'
+                        goal.progress_percentage >= 50 ? 'text-blue-600' : 'text-orange-600'
                       }`}>
                         {goal.progress_percentage.toFixed(1)}%
                       </div>
-                      {goal.is_on_track ? (
-                        <div className="flex items-center text-xs text-green-600 font-medium">
-                          <TrendingUp className="w-3 h-3 mr-1" />
-                          On track
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-xs text-orange-600 font-medium">
-                          <TrendingDown className="w-3 h-3 mr-1" />
-                          Behind
-                        </div>
-                      )}
+                      <div className={`flex items-center text-xs font-medium ${
+                        goal.progress_percentage >= 100 ? 'text-green-600' :
+                        goal.progress_percentage >= 50 ? 'text-blue-600' : 'text-orange-600'
+                      }`}>
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                        {goal.progress_percentage >= 100 ? 'Completat' : 'Progres'}
+                      </div>
                     </div>
                   </div>
 
