@@ -119,27 +119,20 @@ export default function GoalsDashboard() {
         let currentValue = 0;
         let todayChange = 0;
 
-        // Fetch ALL snapshots for the client
-        console.log(`[GOAL] Querying with client_id:`, clientId);
+        // Fetch snapshots for the goal period ONLY (avoids Supabase 1000-row limit)
+        console.log(`[GOAL] Querying for period:`, goal.start_date, 'to', goal.end_date);
         
-        const { data: allSnapshots } = await supabase
+        const { data: snapshots } = await supabase
           .from('metrics_snapshots')
           .select('*')
-          .eq('client_id', clientId);
+          .eq('client_id', clientId)
+          .gte('date', goal.start_date)
+          .lte('date', goal.end_date)
+          .order('created_at', { ascending: false });
 
-        console.log(`[GOAL] All snapshots returned:`, allSnapshots?.length);
+        console.log(`[GOAL] Snapshots in period:`, snapshots?.length);
 
-        if (allSnapshots && allSnapshots.length > 0) {
-          // Show which client_ids we actually got
-          const uniqueClientIds = [...new Set(allSnapshots.map(s => s.client_id))];
-          console.log(`[GOAL] Unique client_ids in results:`, uniqueClientIds);
-          
-          // Filter snapshots for the goal period
-          const snapshots = allSnapshots.filter(s => 
-            s.date >= goal.start_date && s.date <= goal.end_date
-          );
-
-          console.log(`[GOAL] Snapshots after date filter:`, snapshots.length);
+        if (snapshots && snapshots.length > 0) {
           
           // Show unique dates
           const uniqueDates = [...new Set(snapshots.map(s => s.date))].sort();
