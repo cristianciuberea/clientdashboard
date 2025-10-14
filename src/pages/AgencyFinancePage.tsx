@@ -40,11 +40,7 @@ export default function AgencyFinancePage() {
     fetchClients();
   }, []);
 
-  useEffect(() => {
-    if (selectedClient) {
-      fetchFinancialData();
-    }
-  }, [selectedClient, period, customStartDate, customEndDate]);
+  const fetchFinancialData = useCallback(async () => {
 
   const fetchClients = async () => {
     try {
