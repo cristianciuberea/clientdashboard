@@ -15,6 +15,7 @@ interface GoalWithProgress extends Goal {
   today_change: number;
   facebook_spend: number;
   roas: number;
+  expected_progress: number;
 }
 
 const metricLabels: Record<Goal['metric_type'], string> = {
@@ -285,6 +286,7 @@ export default function GoalsDashboard() {
           today_change: todayChange,
           facebook_spend: facebookSpend,
           roas: roas,
+          expected_progress: expectedProgress,
         });
       }
 
@@ -492,17 +494,66 @@ export default function GoalsDashboard() {
                     </div>
                   </div>
 
-                  <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className={`h-3 rounded-full transition-all duration-500 ${
-                        goal.progress_percentage >= 100
-                          ? 'bg-gradient-to-r from-green-500 to-green-600'
-                          : goal.is_on_track
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600'
-                          : 'bg-gradient-to-r from-orange-500 to-orange-600'
-                      }`}
-                      style={{ width: `${Math.min(goal.progress_percentage, 100)}%` }}
-                    />
+                  {/* Enhanced Progress Bar with Milestones */}
+                  <div className="w-full relative">
+                    {/* Progress Bar Background */}
+                    <div className="w-full bg-slate-200 rounded-full h-3 relative overflow-visible">
+                      {/* Milestone markers at 25%, 50%, 75% */}
+                      {[25, 50, 75].map((milestone) => (
+                        <div
+                          key={milestone}
+                          className="absolute top-0 bottom-0 w-0.5 bg-slate-400"
+                          style={{ left: `${milestone}%` }}
+                        >
+                          <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs text-slate-500 font-medium">
+                            {milestone}%
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Expected Progress Indicator (where you should be) */}
+                      {goal.expected_progress > 0 && goal.expected_progress < 100 && (
+                        <div
+                          className="absolute top-1/2 transform -translate-y-1/2 z-10"
+                          style={{ left: `${Math.min(goal.expected_progress, 100)}%` }}
+                        >
+                          <div className="relative">
+                            <div className="w-1 h-6 bg-slate-600 rounded-full shadow-lg" />
+                            <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                              <div className="bg-slate-700 text-white text-xs px-2 py-0.5 rounded shadow-lg">
+                                Expected: {goal.expected_progress.toFixed(0)}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actual Progress Bar */}
+                      <div
+                        className={`h-3 rounded-full transition-all duration-500 relative ${
+                          goal.progress_percentage >= 100
+                            ? 'bg-gradient-to-r from-green-500 to-green-600'
+                            : goal.progress_percentage >= goal.expected_progress
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+                            : 'bg-gradient-to-r from-orange-500 to-orange-600'
+                        }`}
+                        style={{ width: `${Math.min(goal.progress_percentage, 100)}%` }}
+                      />
+                    </div>
+                    
+                    {/* Progress vs Expected Label */}
+                    <div className="mt-2 flex items-center justify-between text-xs">
+                      <div className="text-slate-600">
+                        Actual: <span className="font-semibold">{goal.progress_percentage.toFixed(1)}%</span>
+                      </div>
+                      <div className={`font-semibold ${
+                        goal.progress_percentage >= goal.expected_progress 
+                          ? 'text-blue-600' 
+                          : 'text-orange-600'
+                      }`}>
+                        {goal.progress_percentage >= goal.expected_progress ? '✓ Ahead' : '⚠ Behind'} by {Math.abs(goal.progress_percentage - goal.expected_progress).toFixed(1)}%
+                      </div>
+                    </div>
                   </div>
                 </div>
 
