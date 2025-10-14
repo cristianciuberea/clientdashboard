@@ -538,7 +538,7 @@ export default function GoalsDashboard() {
                         >
                           <div className="relative">
                             <div className="w-1 h-6 bg-slate-600 rounded-full shadow-lg" />
-                            <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                            <div className="absolute top-7 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                               <div className="bg-slate-700 text-white text-xs px-2 py-0.5 rounded shadow-lg">
                                 Expected: {goal.expected_progress.toFixed(0)}%
                               </div>
