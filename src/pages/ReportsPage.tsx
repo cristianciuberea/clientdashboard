@@ -1094,7 +1094,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
               <div className="bg-white rounded-lg border border-slate-200 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-bold text-slate-800">First Day Top Products</h2>
+                  <h2 className="text-base font-bold text-slate-800">Top produse (ieri)</h2>
                   <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
                     {metrics.firstDayDate ? new Date(metrics.firstDayDate).toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }) : 'N/A'}
                   </span>
@@ -1128,7 +1128,7 @@ export default function ReportsPage() {
 
               <div className="bg-white rounded-lg border border-slate-200 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-bold text-slate-800">Last Day Top Products</h2>
+                  <h2 className="text-base font-bold text-slate-800">Top produse (azi)</h2>
                   <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                     {metrics.lastDayDate ? new Date(metrics.lastDayDate).toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }) : 'Live'}
                   </span>
