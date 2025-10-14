@@ -13,6 +13,8 @@ interface GoalWithProgress extends Goal {
   days_remaining: number;
   daily_target: number;
   today_change: number;
+  facebook_spend: number;
+  roas: number;
 }
 
 const metricLabels: Record<Goal['metric_type'], string> = {
@@ -248,6 +250,16 @@ export default function GoalsDashboard() {
           }
         }
 
+        // Calculate Facebook Spend
+        let facebookSpend = 0;
+        fbSnapshots.forEach(s => {
+          const metrics = (s.metrics as any);
+          facebookSpend += metrics?.spend || 0;
+        });
+
+        // Calculate ROAS (Return on Ad Spend)
+        const roas = facebookSpend > 0 ? currentValue / facebookSpend : 0;
+
         // Calculate progress
         const progressPercentage = goal.target_value > 0 ? (currentValue / goal.target_value) * 100 : 0;
         
@@ -272,6 +284,8 @@ export default function GoalsDashboard() {
           days_remaining: daysRemaining,
           daily_target: dailyTarget,
           today_change: todayChange,
+          facebook_spend: facebookSpend,
+          roas: roas,
         });
       }
 
@@ -494,7 +508,7 @@ export default function GoalsDashboard() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                     <p className="text-xs text-slate-600 mb-1">Days Remaining</p>
                     <p className="text-lg font-bold text-slate-800">{goal.days_remaining}</p>
@@ -515,6 +529,18 @@ export default function GoalsDashboard() {
                     <p className="text-xs text-slate-600 mb-1">Remaining</p>
                     <p className="text-lg font-bold text-slate-800">
                       {formatValue(Math.max(0, goal.target_value - goal.current_value), goal.metric_type)}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                    <p className="text-xs text-slate-600 mb-1">Facebook Spend</p>
+                    <p className="text-lg font-bold text-purple-700">
+                      {goal.facebook_spend.toFixed(2)} RON
+                    </p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                    <p className="text-xs text-slate-600 mb-1">ROAS</p>
+                    <p className="text-lg font-bold text-green-700">
+                      {goal.roas.toFixed(2)}x
                     </p>
                   </div>
                 </div>
