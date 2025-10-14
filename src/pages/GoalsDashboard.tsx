@@ -131,6 +131,13 @@ export default function GoalsDashboard() {
             s.date >= goal.start_date && s.date <= goal.end_date
           );
 
+          console.log(`[GOAL] All snapshots before filtering:`, allSnapshots.length);
+          console.log(`[GOAL] Snapshots after date filter:`, snapshots.length);
+          
+          // Show unique dates
+          const uniqueDates = [...new Set(snapshots.map(s => s.date))].sort();
+          console.log(`[GOAL] Unique dates found:`, uniqueDates);
+
           if (snapshots.length > 0) {
             // Group by date-platform to get latest snapshot per combination
             const latestByDatePlatform: Record<string, any> = {};
@@ -153,6 +160,9 @@ export default function GoalsDashboard() {
               s => (s.platform === 'woocommerce' || s.platform === 'wordpress') && 
                    (s as any).metric_type !== 'ecommerce_aggregate'
             );
+
+            console.log(`[GOAL] After deduplication - WooCommerce daily:`, wooDailySnapshots.length);
+            console.log(`[GOAL] WooCommerce dates:`, wooDailySnapshots.map(s => s.date).sort());
 
             // Facebook Ads snapshots
             const fbSnapshots = uniqueSnapshots.filter(s => s.platform === 'facebook_ads');
