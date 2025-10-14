@@ -140,6 +140,38 @@ export interface Database {
           created_at?: string
         }
       }
+      client_expenses: {
+        Row: {
+          id: string
+          client_id: string
+          category: string
+          amount: number
+          description: string | null
+          is_recurring: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          category: string
+          amount: number
+          description?: string | null
+          is_recurring?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          category?: string
+          amount?: number
+          description?: string | null
+          is_recurring?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
       integrations: {
         Row: {
           id: string

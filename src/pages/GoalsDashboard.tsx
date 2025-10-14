@@ -95,16 +95,16 @@ export default function GoalsDashboard() {
     try {
       setLoading(true);
 
-      // Fetch client data for monthly expenses
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('monthly_expenses')
-        .eq('id', clientId)
-        .single();
+      // Fetch all expenses for this client
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('client_expenses')
+        .select('amount')
+        .eq('client_id', clientId);
 
-      if (clientError) throw clientError;
+      if (expensesError) throw expensesError;
 
-      const monthlyExpenses = clientData?.monthly_expenses || 0;
+      // Calculate total monthly expenses from individual items
+      const monthlyExpenses = expensesData?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
 
       // Fetch goals
       const { data: goalsData, error: goalsError } = await supabase

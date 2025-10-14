@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2, AlertTriangle, X, Edit2 } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Activity, Plus, Search, Trash2, AlertTriangle, X, Edit2, Receipt } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import type { Database } from '../lib/database.types';
 
 type Client = Database['public']['Tables']['clients']['Row'];
+type Expense = Database['public']['Tables']['client_expenses']['Row'];
 
 interface ClientWithMetrics extends Client {
   total_spend?: number;
@@ -24,7 +25,9 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [monthlyExpenses, setMonthlyExpenses] = useState<string>('');
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [newExpense, setNewExpense] = useState({ category: '', amount: '', description: '' });
 
   useEffect(() => {
     fetchClients();
@@ -46,28 +49,73 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
     }
   };
 
-  const handleEditClient = (client: Client) => {
+  const handleEditClient = async (client: Client) => {
     setEditingClient(client);
-    setMonthlyExpenses(client.monthly_expenses?.toString() || '0');
+    setShowAddExpense(false);
+    setNewExpense({ category: '', amount: '', description: '' });
+    
+    // Fetch expenses for this client
+    try {
+      const { data, error } = await supabase
+        .from('client_expenses')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setExpenses(data || []);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+      setExpenses([]);
+    }
   };
 
-  const handleSaveExpenses = async () => {
-    if (!editingClient) return;
+  const handleAddExpense = async () => {
+    if (!editingClient || !newExpense.category || !newExpense.amount) {
+      alert('Te rog completează categoria și suma!');
+      return;
+    }
 
     try {
       const { error } = await supabase
-        .from('clients')
-        .update({ monthly_expenses: parseFloat(monthlyExpenses) || 0 })
-        .eq('id', editingClient.id);
+        .from('client_expenses')
+        .insert({
+          client_id: editingClient.id,
+          category: newExpense.category,
+          amount: parseFloat(newExpense.amount),
+          description: newExpense.description || null,
+        });
 
       if (error) throw error;
 
-      alert('Cheltuieli lunare actualizate cu succes!');
-      setEditingClient(null);
-      fetchClients();
+      // Refresh expenses list
+      handleEditClient(editingClient);
+      setShowAddExpense(false);
+      setNewExpense({ category: '', amount: '', description: '' });
     } catch (error) {
-      console.error('Error updating expenses:', error);
-      alert('Eroare la actualizarea cheltuielilor');
+      console.error('Error adding expense:', error);
+      alert('Eroare la adăugarea cheltuielii');
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!confirm('Sigur vrei să ștergi această cheltuială?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('client_expenses')
+        .delete()
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      // Refresh expenses list
+      if (editingClient) {
+        handleEditClient(editingClient);
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Eroare la ștergerea cheltuielii');
     }
   };
 
@@ -427,13 +475,17 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
         </div>
       )}
 
-      {/* Edit Monthly Expenses Modal */}
+      {/* Expenses Manager Modal */}
       {editingClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 sticky top-0 bg-white">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Cheltuieli Lunare</h2>
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <Receipt className="w-5 h-5" />
+                  Cheltuieli Lunare
+                </h2>
                 <p className="text-sm text-slate-600">{editingClient.name}</p>
               </div>
               <button
@@ -444,44 +496,151 @@ export default function AgencyDashboard({ onClientSelect }: AgencyDashboardProps
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Cheltuieli Lunare (RON)
-                </label>
-                <p className="text-xs text-slate-500 mb-2">
-                  Salarii, chirie, utilități, și alte costuri fixe lunare pentru calculul profitului net.
-                </p>
-                <input
-                  type="number"
-                  value={monthlyExpenses}
-                  onChange={(e) => setMonthlyExpenses(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                />
+            {/* Total Summary */}
+            <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Total Cheltuieli Lunare</p>
+                  <p className="text-3xl font-bold text-slate-800">
+                    {expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)} RON
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-slate-600 mb-1">Nr. Cheltuieli</p>
+                  <p className="text-2xl font-bold text-blue-600">{expenses.length}</p>
+                </div>
               </div>
+            </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            {/* Expenses List */}
+            <div className="p-6">
+              {expenses.length > 0 ? (
+                <div className="space-y-3 mb-4">
+                  {expenses.map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-300 transition"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-800">{expense.category}</p>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                            Lunar
+                          </span>
+                        </div>
+                        {expense.description && (
+                          <p className="text-sm text-slate-500 mt-1">{expense.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-lg font-bold text-slate-800 min-w-[120px] text-right">
+                          {expense.amount.toFixed(2)} RON
+                        </p>
+                        <button
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition"
+                          title="Șterge cheltuială"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <Receipt className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>Nu există cheltuieli adăugate încă.</p>
+                </div>
+              )}
+
+              {/* Add Expense Form */}
+              {!showAddExpense ? (
+                <button
+                  onClick={() => setShowAddExpense(true)}
+                  className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-400 hover:text-blue-600 transition"
+                >
+                  <Plus className="w-5 h-5" />
+                  Adaugă Cheltuială Nouă
+                </button>
+              ) : (
+                <div className="border-2 border-blue-300 rounded-lg p-4 bg-blue-50">
+                  <p className="font-semibold text-slate-800 mb-3">Cheltuială Nouă</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Categorie *
+                      </label>
+                      <input
+                        type="text"
+                        value={newExpense.category}
+                        onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="ex: Email, Hosting, Agenție, Sală"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Sumă (RON) *
+                      </label>
+                      <input
+                        type="number"
+                        value={newExpense.amount}
+                        onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Descriere (opțional)
+                      </label>
+                      <input
+                        type="text"
+                        value={newExpense.description}
+                        onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Detalii suplimentare..."
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setShowAddExpense(false);
+                          setNewExpense({ category: '', amount: '', description: '' });
+                        }}
+                        className="flex-1 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                      >
+                        Anulează
+                      </button>
+                      <button
+                        onClick={handleAddExpense}
+                        className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
+                      >
+                        Adaugă
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Info Box */}
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800">
-                  <strong>Profit Net</strong> = Revenue - Facebook Ads - Cheltuieli Lunare
+                  <strong>Profit Net</strong> = Revenue - Facebook Ads - Total Cheltuieli
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
               <button
                 onClick={() => setEditingClient(null)}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
-              >
-                Anulează
-              </button>
-              <button
-                onClick={handleSaveExpenses}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
               >
-                Salvează
+                Închide
               </button>
             </div>
           </div>
