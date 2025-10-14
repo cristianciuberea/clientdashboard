@@ -119,63 +119,133 @@ export default function GoalsDashboard() {
         let currentValue = 0;
         let todayChange = 0;
 
-        // Fetch metrics snapshots for the period
-        const { data: snapshots } = await supabase
+        // Fetch ALL snapshots for the client
+        const { data: allSnapshots } = await supabase
           .from('metrics_snapshots')
           .select('*')
-          .eq('client_id', clientId)
-          .gte('date', goal.start_date)
-          .lte('date', goal.end_date);
+          .eq('client_id', clientId);
 
-        if (snapshots && snapshots.length > 0) {
-          // Group by date to get latest snapshot per date
-          const latestByDate: Record<string, any> = {};
-          snapshots.forEach(s => {
-            if (!latestByDate[s.date] || new Date(s.created_at) > new Date(latestByDate[s.date].created_at)) {
-              latestByDate[s.date] = s;
+        if (allSnapshots && allSnapshots.length > 0) {
+          // Filter snapshots for the goal period
+          const snapshots = allSnapshots.filter(s => 
+            s.date >= goal.start_date && s.date <= goal.end_date
+          );
+
+          if (snapshots.length > 0) {
+            // Group by date-platform to get latest snapshot per combination
+            const latestByDatePlatform: Record<string, any> = {};
+            snapshots.forEach(s => {
+              const key = `${s.date}-${s.platform}`;
+              if (!latestByDatePlatform[key] || new Date(s.created_at) > new Date(latestByDatePlatform[key].created_at)) {
+                latestByDatePlatform[key] = s;
+              }
+            });
+
+            const uniqueSnapshots = Object.values(latestByDatePlatform);
+
+            // Check if we have aggregate snapshots for this period (for WooCommerce)
+            const wooAggregateSnapshots = uniqueSnapshots.filter(
+              s => s.platform === 'woocommerce' && (s as any).metric_type === 'ecommerce_aggregate'
+            );
+            
+            // Daily WooCommerce/WordPress snapshots
+            const wooDailySnapshots = uniqueSnapshots.filter(
+              s => (s.platform === 'woocommerce' || s.platform === 'wordpress') && 
+                   (s as any).metric_type !== 'ecommerce_aggregate'
+            );
+
+            // Facebook Ads snapshots
+            const fbSnapshots = uniqueSnapshots.filter(s => s.platform === 'facebook_ads');
+
+            // Calculate based on metric type
+            switch (goal.metric_type) {
+              case 'revenue': {
+                // Try to use aggregate snapshot first for the period
+                const aggregateSnapshot = wooAggregateSnapshots.find(s => s.date === goal.start_date);
+                
+                if (aggregateSnapshot && (aggregateSnapshot.metrics as any)?.totalRevenue) {
+                  currentValue = (aggregateSnapshot.metrics as any).totalRevenue;
+                } else {
+                  // Fall back to summing daily snapshots
+                  wooDailySnapshots.forEach(s => {
+                    currentValue += (s.metrics as any)?.totalRevenue || 0;
+                  });
+                }
+
+                // Today's change
+                const todaySnapshots = wooDailySnapshots.filter(s => s.date === todayStr);
+                todaySnapshots.forEach(s => {
+                  todayChange += (s.metrics as any)?.totalRevenue || 0;
+                });
+                break;
+              }
+              
+              case 'orders': {
+                // Try aggregate first
+                const aggregateSnapshot = wooAggregateSnapshots.find(s => s.date === goal.start_date);
+                
+                if (aggregateSnapshot && (aggregateSnapshot.metrics as any)?.totalOrders) {
+                  currentValue = (aggregateSnapshot.metrics as any).totalOrders;
+                } else {
+                  // Sum daily
+                  wooDailySnapshots.forEach(s => {
+                    currentValue += (s.metrics as any)?.totalOrders || 0;
+                  });
+                }
+
+                // Today's orders
+                const todaySnapshots = wooDailySnapshots.filter(s => s.date === todayStr);
+                todaySnapshots.forEach(s => {
+                  todayChange += (s.metrics as any)?.totalOrders || 0;
+                });
+                break;
+              }
+
+              case 'products': {
+                // Take max from any snapshot (unique products)
+                wooDailySnapshots.forEach(s => {
+                  const products = (s.metrics as any)?.totalProducts || 0;
+                  if (products > currentValue) currentValue = products;
+                });
+
+                const todaySnapshots = wooDailySnapshots.filter(s => s.date === todayStr);
+                todaySnapshots.forEach(s => {
+                  const products = (s.metrics as any)?.totalProducts || 0;
+                  if (products > todayChange) todayChange = products;
+                });
+                break;
+              }
+
+              case 'conversions': {
+                // Sum Facebook conversions
+                fbSnapshots.forEach(s => {
+                  currentValue += (s.metrics as any)?.conversions || 0;
+                });
+
+                const todayFb = fbSnapshots.filter(s => s.date === todayStr);
+                todayFb.forEach(s => {
+                  todayChange += (s.metrics as any)?.conversions || 0;
+                });
+                break;
+              }
+
+              case 'roas': {
+                // Calculate ROAS from all data
+                let totalSpend = 0;
+                let totalRevenue = 0;
+
+                fbSnapshots.forEach(s => {
+                  totalSpend += (s.metrics as any)?.spend || 0;
+                });
+
+                wooDailySnapshots.forEach(s => {
+                  totalRevenue += (s.metrics as any)?.totalRevenue || 0;
+                });
+
+                currentValue = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+                break;
+              }
             }
-          });
-
-          // Calculate based on metric type
-          switch (goal.metric_type) {
-            case 'revenue':
-              Object.values(latestByDate).forEach((s: any) => {
-                currentValue += (s.metrics?.totalRevenue || 0);
-                if (s.date === todayStr) {
-                  todayChange = s.metrics?.totalRevenue || 0;
-                }
-              });
-              break;
-            case 'orders':
-              Object.values(latestByDate).forEach((s: any) => {
-                currentValue += (s.metrics?.totalOrders || 0);
-                if (s.date === todayStr) {
-                  todayChange = s.metrics?.totalOrders || 0;
-                }
-              });
-              break;
-            case 'products':
-              Object.values(latestByDate).forEach((s: any) => {
-                const products = s.metrics?.totalProducts || 0;
-                if (products > currentValue) currentValue = products;
-                if (s.date === todayStr) {
-                  todayChange = products;
-                }
-              });
-              break;
-            case 'conversions':
-              Object.values(latestByDate).forEach((s: any) => {
-                currentValue += (s.metrics?.conversions || 0);
-                if (s.date === todayStr) {
-                  todayChange = s.metrics?.conversions || 0;
-                }
-              });
-              break;
-            case 'roas':
-              const totalSpend = Object.values(latestByDate).reduce((sum: number, s: any) => sum + (s.metrics?.spend || 0), 0);
-              const totalRevenue = Object.values(latestByDate).reduce((sum: number, s: any) => sum + (s.metrics?.totalRevenue || 0), 0);
-              currentValue = totalSpend > 0 ? totalRevenue / totalSpend : 0;
-              break;
           }
         }
 
