@@ -120,8 +120,6 @@ export default function GoalsDashboard() {
         let todayChange = 0;
 
         // Fetch snapshots for the goal period ONLY (avoids Supabase 1000-row limit)
-        console.log(`[GOAL] Querying for period:`, goal.start_date, 'to', goal.end_date);
-        
         const { data: snapshots } = await supabase
           .from('metrics_snapshots')
           .select('*')
@@ -130,14 +128,7 @@ export default function GoalsDashboard() {
           .lte('date', goal.end_date)
           .order('created_at', { ascending: false });
 
-        console.log(`[GOAL] Snapshots in period:`, snapshots?.length);
-
         if (snapshots && snapshots.length > 0) {
-          
-          // Show unique dates
-          const uniqueDates = [...new Set(snapshots.map(s => s.date))].sort();
-          console.log(`[GOAL] Unique dates found:`, uniqueDates);
-
           if (snapshots.length > 0) {
             // Group by date-platform to get latest snapshot per combination
             const latestByDatePlatform: Record<string, any> = {};
@@ -161,54 +152,24 @@ export default function GoalsDashboard() {
                    (s as any).metric_type !== 'ecommerce_aggregate'
             );
 
-            const wooDates = wooDailySnapshots.map(s => s.date).sort();
-            console.log(`[GOAL] After deduplication - WooCommerce daily:`, wooDailySnapshots.length);
-            console.log(`[GOAL] WooCommerce dates:`, wooDates);
-            console.log(`[GOAL] Has 2025-10-13?`, wooDates.includes('2025-10-13'));
-            console.log(`[GOAL] Has 2025-10-14?`, wooDates.includes('2025-10-14'));
-            
-            if (!wooDates.includes('2025-10-13')) {
-              console.warn('[GOAL] ⚠️ Missing 2025-10-13! Checking why...');
-              const oct13Snapshots = snapshots.filter(s => s.date === '2025-10-13' && s.platform === 'woocommerce');
-              console.log('[GOAL] Oct 13 snapshots before dedup:', oct13Snapshots.length);
-              console.log('[GOAL] Oct 13 metric_types:', [...new Set(oct13Snapshots.map(s => s.metric_type))]);
-            }
-            
-            if (!wooDates.includes('2025-10-14')) {
-              console.warn('[GOAL] ⚠️ Missing 2025-10-14! Checking why...');
-              const oct14Snapshots = snapshots.filter(s => s.date === '2025-10-14' && s.platform === 'woocommerce');
-              console.log('[GOAL] Oct 14 snapshots before dedup:', oct14Snapshots.length);
-              console.log('[GOAL] Oct 14 metric_types:', [...new Set(oct14Snapshots.map(s => s.metric_type))]);
-            }
-
             // Facebook Ads snapshots
             const fbSnapshots = uniqueSnapshots.filter(s => s.platform === 'facebook_ads');
 
             // Calculate based on metric type
             switch (goal.metric_type) {
               case 'revenue': {
-                console.log(`[GOAL] Period: ${goal.start_date} to ${goal.end_date}`);
-                console.log(`[GOAL] Total snapshots in period:`, snapshots.length);
-                console.log(`[GOAL] WooCommerce aggregate snapshots:`, wooAggregateSnapshots.length);
-                console.log(`[GOAL] WooCommerce daily snapshots:`, wooDailySnapshots.length);
-                
                 // Try to use aggregate snapshot first for the period
                 const aggregateSnapshot = wooAggregateSnapshots.find(s => s.date === goal.start_date);
                 
                 if (aggregateSnapshot && (aggregateSnapshot.metrics as any)?.totalRevenue) {
                   currentValue = (aggregateSnapshot.metrics as any).totalRevenue;
-                  console.log(`[GOAL] Using AGGREGATE snapshot: ${currentValue} RON`);
                 } else {
                   // Fall back to summing daily snapshots
-                  console.log(`[GOAL] No aggregate, summing DAILY snapshots...`);
                   wooDailySnapshots.forEach(s => {
                     const revenue = (s.metrics as any)?.totalRevenue || 0;
                     currentValue += revenue;
-                    console.log(`[GOAL] Date ${s.date}: +${revenue} RON (total now: ${currentValue})`);
                   });
                 }
-
-                console.log(`[GOAL] FINAL currentValue: ${currentValue} RON`);
 
                 // Today's change
                 const todaySnapshots = wooDailySnapshots.filter(s => s.date === todayStr);
