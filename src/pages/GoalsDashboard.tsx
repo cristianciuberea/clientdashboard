@@ -161,8 +161,25 @@ export default function GoalsDashboard() {
                    (s as any).metric_type !== 'ecommerce_aggregate'
             );
 
+            const wooDates = wooDailySnapshots.map(s => s.date).sort();
             console.log(`[GOAL] After deduplication - WooCommerce daily:`, wooDailySnapshots.length);
-            console.log(`[GOAL] WooCommerce dates:`, wooDailySnapshots.map(s => s.date).sort());
+            console.log(`[GOAL] WooCommerce dates:`, wooDates);
+            console.log(`[GOAL] Has 2025-10-13?`, wooDates.includes('2025-10-13'));
+            console.log(`[GOAL] Has 2025-10-14?`, wooDates.includes('2025-10-14'));
+            
+            if (!wooDates.includes('2025-10-13')) {
+              console.warn('[GOAL] ⚠️ Missing 2025-10-13! Checking why...');
+              const oct13Snapshots = snapshots.filter(s => s.date === '2025-10-13' && s.platform === 'woocommerce');
+              console.log('[GOAL] Oct 13 snapshots before dedup:', oct13Snapshots.length);
+              console.log('[GOAL] Oct 13 metric_types:', [...new Set(oct13Snapshots.map(s => s.metric_type))]);
+            }
+            
+            if (!wooDates.includes('2025-10-14')) {
+              console.warn('[GOAL] ⚠️ Missing 2025-10-14! Checking why...');
+              const oct14Snapshots = snapshots.filter(s => s.date === '2025-10-14' && s.platform === 'woocommerce');
+              console.log('[GOAL] Oct 14 snapshots before dedup:', oct14Snapshots.length);
+              console.log('[GOAL] Oct 14 metric_types:', [...new Set(oct14Snapshots.map(s => s.metric_type))]);
+            }
 
             // Facebook Ads snapshots
             const fbSnapshots = uniqueSnapshots.filter(s => s.platform === 'facebook_ads');
