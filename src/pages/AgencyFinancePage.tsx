@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, X, Receipt, Calendar, FileText } from 'lucide-react';
 import type { Database } from '../lib/database.types';
@@ -40,7 +40,11 @@ export default function AgencyFinancePage() {
     fetchClients();
   }, []);
 
-  const fetchFinancialData = useCallback(async () => {
+  useEffect(() => {
+    if (selectedClient) {
+      fetchFinancialData();
+    }
+  }, [selectedClient, period, customStartDate, customEndDate]);
 
   const fetchClients = async () => {
     try {
