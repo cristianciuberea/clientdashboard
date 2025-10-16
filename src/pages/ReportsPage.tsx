@@ -265,7 +265,16 @@ export default function ReportsPage() {
           if (snapshot.platform === 'facebook_ads') {
             const currentSpend = snapshotMetrics.spend || 0;
 
-            if (!fbDailyData[snapshot.date] || currentSpend > fbDailyData[snapshot.date].spend) {
+            // Debug each Facebook snapshot
+            console.log('Facebook snapshot:', {
+              date: snapshot.date,
+              spend: currentSpend,
+              impressions: snapshotMetrics.impressions || 0,
+              clicks: snapshotMetrics.clicks || 0
+            });
+
+            if (!fbDailyData[snapshot.date]) {
+              // First snapshot for this date
               fbDailyData[snapshot.date] = {
                 spend: currentSpend,
                 impressions: snapshotMetrics.impressions || 0,
@@ -280,6 +289,25 @@ export default function ReportsPage() {
                 landing_page_view_rate: snapshotMetrics.landing_page_view_rate || 0,
                 conversion_rate: snapshotMetrics.conversion_rate || 0
               };
+            } else {
+              // Multiple snapshots for same date - keep the one with highest spend
+              if (currentSpend > fbDailyData[snapshot.date].spend) {
+                console.log(`Replacing snapshot for ${snapshot.date}: ${fbDailyData[snapshot.date].spend} → ${currentSpend}`);
+                fbDailyData[snapshot.date] = {
+                  spend: currentSpend,
+                  impressions: snapshotMetrics.impressions || 0,
+                  clicks: snapshotMetrics.clicks || 0,
+                  link_clicks: snapshotMetrics.link_clicks || 0,
+                  landing_page_views: snapshotMetrics.landing_page_views || 0,
+                  conversions: snapshotMetrics.conversions || 0,
+                  ctr: snapshotMetrics.ctr || 0,
+                  cpc: snapshotMetrics.cpc || 0,
+                  cpm: snapshotMetrics.cpm || 0,
+                  cost_per_link_click: snapshotMetrics.cost_per_link_click || 0,
+                  landing_page_view_rate: snapshotMetrics.landing_page_view_rate || 0,
+                  conversion_rate: snapshotMetrics.conversion_rate || 0
+                };
+              }
             }
           } else {
             // For WooCommerce/WordPress, store last day snapshot data
@@ -564,6 +592,14 @@ export default function ReportsPage() {
           fbDatesToInclude,
           dateRange
         });
+        
+        // Debug individual snapshot data
+        console.log('Individual snapshot data:', fbDatesToInclude.map(([date, data]) => ({
+          date,
+          spend: data.spend,
+          impressions: data.impressions,
+          clicks: data.clicks
+        })));
 
         const facebookAds = fbDataCount > 0 ? {
           spend: fbSpend,
