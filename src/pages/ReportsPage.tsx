@@ -537,6 +537,20 @@ export default function ReportsPage() {
         const landingPageViewRate = fbLinkClicks > 0 ? (fbLandingPageViews / fbLinkClicks) * 100 : 0;
         const conversionRate = fbLandingPageViews > 0 ? (fbConversions / fbLandingPageViews) * 100 : 0;
 
+        // Debug Facebook data
+        console.log('Facebook Debug:', {
+          fbDataCount,
+          fbSpend,
+          fbImpressions,
+          fbClicks,
+          fbLinkClicks,
+          fbLandingPageViews,
+          fbConversions,
+          fbDailyData,
+          fbDatesToInclude,
+          dateRange
+        });
+
         const facebookAds = fbDataCount > 0 ? {
           spend: fbSpend,
           impressions: fbImpressions,
