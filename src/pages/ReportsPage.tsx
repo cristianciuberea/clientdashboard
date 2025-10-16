@@ -554,11 +554,13 @@ export default function ReportsPage() {
           const todayData = Object.entries(fbDailyData).filter(([date]) => date === todayStr);
           if (todayData.length > 0) {
             fbDatesToInclude = todayData;
+            console.log('Using today\'s Facebook data:', fbDatesToInclude);
           } else {
             // If no data for today, use the most recent available data
             const sortedDates = Object.entries(fbDailyData).sort(([a], [b]) => b.localeCompare(a));
             fbDatesToInclude = sortedDates.slice(0, 1); // Take the most recent day
-            console.log('No data for today, using most recent:', fbDatesToInclude);
+            console.log('No Facebook data for today, using most recent:', fbDatesToInclude);
+            console.log('Note: Facebook data is usually delayed by 24-48 hours');
           }
         } else {
           fbDatesToInclude = Object.entries(fbDailyData);
