@@ -517,10 +517,24 @@ export default function ReportsPage() {
         let fbConversions = 0;
         let fbDataCount = 0;
 
-        // For 'today' filter, only use today's FB data, not yesterday's
-        const fbDatesToInclude = dateRange === 'today' 
-          ? Object.entries(fbDailyData).filter(([date]) => date === todayStr)
-          : Object.entries(fbDailyData);
+        // Debug today's date
+        console.log('Today debug:', { todayStr, fbDailyDataKeys: Object.keys(fbDailyData) });
+        
+        // For 'today' filter, use today's FB data, or fallback to most recent data
+        let fbDatesToInclude;
+        if (dateRange === 'today') {
+          const todayData = Object.entries(fbDailyData).filter(([date]) => date === todayStr);
+          if (todayData.length > 0) {
+            fbDatesToInclude = todayData;
+          } else {
+            // If no data for today, use the most recent available data
+            const sortedDates = Object.entries(fbDailyData).sort(([a], [b]) => b.localeCompare(a));
+            fbDatesToInclude = sortedDates.slice(0, 1); // Take the most recent day
+            console.log('No data for today, using most recent:', fbDatesToInclude);
+          }
+        } else {
+          fbDatesToInclude = Object.entries(fbDailyData);
+        }
 
         for (const [date, dayData] of fbDatesToInclude) {
           fbSpend += dayData.spend || 0;
