@@ -549,8 +549,7 @@ export default function ReportsPage() {
         console.log('Today debug:', { 
           todayStr, 
           fbDailyDataKeys: Object.keys(fbDailyData),
-          fbDailyData: fbDailyData,
-          allSnapshots: snapshots.filter(s => s.platform === 'facebook_ads').map(s => ({ date: s.date, spend: s.metrics?.spend }))
+          fbDailyData: fbDailyData
         });
         
         // For 'today' filter, use today's FB data, or fallback to most recent data
