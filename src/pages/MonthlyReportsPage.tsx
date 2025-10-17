@@ -304,7 +304,7 @@ export default function MonthlyReportsPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  if (loading && dailyMetrics.length === 0) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
