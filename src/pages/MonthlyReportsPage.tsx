@@ -114,10 +114,14 @@ export default function MonthlyReportsPage() {
           return acc;
         }, {});
         
-        console.log('Facebook data by date:', Object.keys(datesWithData).sort().map(date => ({
+        const facebookDataByDate = Object.keys(datesWithData).sort().map(date => ({
           date,
           totalSpend: datesWithData[date].reduce((sum, spend) => sum + spend, 0)
-        })));
+        }));
+        console.log('Facebook data by date:', facebookDataByDate);
+        
+        // Also log the first few dates to see what we have
+        console.log('First 10 Facebook dates:', facebookDataByDate.slice(0, 10));
       }
 
       // Process snapshots by date
