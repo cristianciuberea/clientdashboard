@@ -717,29 +717,10 @@ export default function ReportsPage() {
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
 
-      // Define all periods to sync - limit to avoid Facebook API rate limits
+      // Sync only today's data - historical data should already be stored
+      // Yesterday, monthly, and yearly data don't change, so no need to re-sync
       const periodsToSync = [
-        { range: 'today' as const, label: 'Today', dateFrom: undefined, dateTo: today.toISOString().split('T')[0] },
-        { range: 'yesterday' as const, label: 'Yesterday', dateFrom: undefined, dateTo: yesterday.toISOString().split('T')[0] },
-        {
-          range: 'this_month' as const,
-          label: 'This Month',
-          dateFrom: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0],
-          dateTo: today.toISOString().split('T')[0]
-        },
-        // Skip last_month and this_year to avoid Facebook API rate limits
-        // {
-        //   range: 'last_month' as const,
-        //   label: 'Last Month',
-        //   dateFrom: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0],
-        //   dateTo: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0]
-        // },
-        // {
-        //   range: 'this_year' as const,
-        //   label: 'This Year',
-        //   dateFrom: new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0],
-        //   dateTo: today.toISOString().split('T')[0]
-        // },
+        { range: 'today' as const, label: 'Today', dateFrom: undefined, dateTo: today.toISOString().split('T')[0] }
       ];
 
       const totalTasks = periodsToSync.length * integrations.length;
@@ -782,7 +763,7 @@ export default function ReportsPage() {
         }
       }
 
-      alert(`All periods synced successfully! (${periodsToSync.length} periods × ${integrations.length} integrations)`);
+      alert(`Today's data synced successfully! (${integrations.length} integrations)`);
 
       if (selectedClient) {
         fetchMetrics(selectedClient.id);
