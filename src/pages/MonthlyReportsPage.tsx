@@ -118,10 +118,10 @@ export default function MonthlyReportsPage() {
           date,
           totalSpend: datesWithData[date].reduce((sum, spend) => sum + spend, 0)
         }));
-        console.log('Facebook data by date:', facebookDataByDate);
+        console.log('Facebook data by date:', JSON.stringify(facebookDataByDate, null, 2));
         
         // Also log the first few dates to see what we have
-        console.log('First 10 Facebook dates:', facebookDataByDate.slice(0, 10));
+        console.log('First 10 Facebook dates:', JSON.stringify(facebookDataByDate.slice(0, 10), null, 2));
       }
 
       // Process snapshots by date
