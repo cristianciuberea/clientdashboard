@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog, Target, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog, Target, DollarSign, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -44,6 +44,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
     { id: 'goals', label: 'Goals', icon: Target },
     ...(isSuperAdmin || isManager ? [{ id: 'finance', label: 'Finance', icon: DollarSign }] : []),
     { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'monthly-reports', label: 'Monthly Reports', icon: Calendar },
     { id: 'alerts', label: 'Alerts', icon: Bell },
     ...(isSuperAdmin ? [{ id: 'users', label: 'User Management', icon: UserCog }] : []),
     ...(!isClient ? [{ id: 'settings', label: 'Settings', icon: Settings }] : []),

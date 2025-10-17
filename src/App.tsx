@@ -10,6 +10,7 @@ import SharedReportPage from './pages/SharedReportPage';
 import UserManagementPage from './pages/UserManagementPage';
 import GoalsDashboard from './pages/GoalsDashboard';
 import AgencyFinancePage from './pages/AgencyFinancePage';
+import MonthlyReportsPage from './pages/MonthlyReportsPage';
 import Sidebar from './components/Sidebar';
 import BackfillBanner from './components/BackfillBanner';
 
@@ -91,6 +92,8 @@ function AppContent() {
         return <AgencyFinancePage />;
       case 'reports':
         return <ReportsPage />;
+      case 'monthly-reports':
+        return <MonthlyReportsPage />;
       case 'alerts':
         return <AlertsPage />;
       case 'users':
