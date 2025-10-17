@@ -694,7 +694,7 @@ export default function ReportsPage() {
         .eq('status', 'active');
 
       if (error) throw error;
-      console.log('Found integrations for client', clientId, ':', data);
+      console.log('Found integrations for client', clientId, ':', JSON.stringify(data, null, 2));
       setIntegrations(data || []);
     } catch (error) {
       console.error('Error fetching integrations:', error);
