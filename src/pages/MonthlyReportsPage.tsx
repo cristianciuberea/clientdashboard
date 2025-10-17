@@ -436,10 +436,10 @@ export default function MonthlyReportsPage() {
         {/* Table */}
         <div className="bg-white rounded-lg border border-slate-200 mb-6">
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
-            💡 Scroll orizontal pentru a vedea toate coloanele
+            💡 Scroll orizontal pentru a vedea toate coloanele (glisează cu mouse-ul sau touchpad-ul)
           </div>
-          <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-            <table className="w-full min-w-[2500px] divide-y divide-slate-200">
+          <div className="overflow-x-scroll overflow-y-auto max-h-[600px] w-full" style={{ overflowX: 'scroll' }}>
+            <table className="min-w-[2500px] divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-20">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-30">
