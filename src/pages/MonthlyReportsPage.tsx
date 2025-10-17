@@ -102,6 +102,22 @@ export default function MonthlyReportsPage() {
       if (fbSnapshots && fbSnapshots.length > 0) {
         console.log('First Facebook snapshot:', fbSnapshots[0]);
         console.log('Facebook snapshot metrics:', fbSnapshots[0].metrics);
+        
+        // Log all Facebook snapshots with dates
+        console.log('All Facebook snapshots dates:', fbSnapshots.map(s => ({ date: s.date, spend: s.metrics?.spend || 0 })));
+        
+        // Group by date to see which days have data
+        const datesWithData = fbSnapshots.reduce((acc, snapshot) => {
+          const date = snapshot.date;
+          if (!acc[date]) acc[date] = [];
+          acc[date].push(snapshot.metrics?.spend || 0);
+          return acc;
+        }, {});
+        
+        console.log('Facebook data by date:', Object.keys(datesWithData).sort().map(date => ({
+          date,
+          totalSpend: datesWithData[date].reduce((sum, spend) => sum + spend, 0)
+        })));
       }
 
       // Process snapshots by date
