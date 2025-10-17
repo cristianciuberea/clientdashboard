@@ -717,7 +717,7 @@ export default function ReportsPage() {
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
 
-      // Define all periods to sync
+      // Define all periods to sync - limit to avoid Facebook API rate limits
       const periodsToSync = [
         { range: 'today' as const, label: 'Today', dateFrom: undefined, dateTo: today.toISOString().split('T')[0] },
         { range: 'yesterday' as const, label: 'Yesterday', dateFrom: undefined, dateTo: yesterday.toISOString().split('T')[0] },
@@ -727,18 +727,19 @@ export default function ReportsPage() {
           dateFrom: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0],
           dateTo: today.toISOString().split('T')[0]
         },
-        {
-          range: 'last_month' as const,
-          label: 'Last Month',
-          dateFrom: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0],
-          dateTo: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0]
-        },
-        {
-          range: 'this_year' as const,
-          label: 'This Year',
-          dateFrom: new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0],
-          dateTo: today.toISOString().split('T')[0]
-        },
+        // Skip last_month and this_year to avoid Facebook API rate limits
+        // {
+        //   range: 'last_month' as const,
+        //   label: 'Last Month',
+        //   dateFrom: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0],
+        //   dateTo: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0]
+        // },
+        // {
+        //   range: 'this_year' as const,
+        //   label: 'This Year',
+        //   dateFrom: new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0],
+        //   dateTo: today.toISOString().split('T')[0]
+        // },
       ];
 
       const totalTasks = periodsToSync.length * integrations.length;
