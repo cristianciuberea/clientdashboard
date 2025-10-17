@@ -576,9 +576,6 @@ export default function MonthlyReportsPage() {
             </div>
           </div>
         </div>
-        
-        {/* Bottom padding for better scroll visibility */}
-        <div className="h-16 bg-slate-50"></div>
 
         {dailyMetrics.length === 0 && (
           <div className="text-center py-12">
@@ -589,10 +586,10 @@ export default function MonthlyReportsPage() {
             </p>
           </div>
         )}
+        
+        {/* Bottom padding for better scroll visibility */}
+        <div className="h-16 bg-slate-50"></div>
       </div>
-      
-      {/* Bottom padding for better scroll visibility */}
-      <div className="h-16 bg-slate-50"></div>
     </div>
   );
 }
