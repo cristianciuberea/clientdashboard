@@ -42,6 +42,7 @@
 /* Force horizontal scroll for Monthly Reports table */
 .monthly-reports-table-container {
   overflow-x: scroll !important;
+  overflow-y: visible !important;
   scrollbar-width: auto !important;
   scrollbar-color: #3b82f6 #e5e7eb !important;
 }
