@@ -210,23 +210,26 @@ Deno.serve(async (req: Request) => {
       topProducts,
     };
 
-    const { error: insertError } = await supabaseClient
+    // Use upsert to update existing snapshot or create new one
+    const { error: upsertError } = await supabaseClient
       .from('metrics_snapshots')
-      .insert({
+      .upsert({
         client_id,
         integration_id,
         platform: 'woocommerce',
         metric_type: metricType,
         date: snapshotDate,
         metrics: metrics,
+      }, {
+        onConflict: 'client_id,integration_id,platform,metric_type,date'
       });
 
-    if (insertError) {
-      console.error(`Failed to insert metrics for ${snapshotDate}:`, insertError);
-      throw insertError;
+    if (upsertError) {
+      console.error(`Failed to upsert metrics for ${snapshotDate}:`, upsertError);
+      throw upsertError;
     }
 
-    console.log(`Successfully saved aggregated metrics for ${snapshotDate}`);
+    console.log(`Successfully upserted aggregated metrics for ${snapshotDate}`);
 
     const { error: updateError } = await supabaseClient
       .from('integrations')

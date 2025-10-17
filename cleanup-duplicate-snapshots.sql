@@ -10,9 +10,9 @@ SELECT
 FROM metrics_snapshots 
 GROUP BY platform;
 
--- Delete all Facebook snapshots (they will be recreated by the new sync system)
+-- Delete all Facebook and WooCommerce snapshots (they will be recreated by the new sync system)
 DELETE FROM metrics_snapshots 
-WHERE platform = 'facebook_ads';
+WHERE platform IN ('facebook_ads', 'woocommerce');
 
 -- Verify the cleanup
 SELECT 
@@ -28,4 +28,4 @@ GROUP BY platform;
 -- WHERE client_id NOT IN (SELECT id FROM clients);
 
 -- Show final result
-SELECT 'Cleanup completed. Facebook snapshots removed.' as status;
+SELECT 'Cleanup completed. Facebook and WooCommerce snapshots removed.' as status;
