@@ -60,7 +60,7 @@ export default function MonthlyReportsPage() {
 
   const fetchDailyMetrics = useCallback(async (clientId: string, month: string) => {
     try {
-      setLoading(true);
+      // Don't set loading to true here, it blocks the whole page
       
       // Get date range for the selected month
       const startDate = `${month}-01`;
@@ -191,8 +191,6 @@ export default function MonthlyReportsPage() {
       setDailyMetrics(sortedMetrics);
     } catch (error) {
       console.error('Error fetching daily metrics:', error);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
