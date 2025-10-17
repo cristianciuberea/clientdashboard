@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
     for (const integration of integrations) {
       const now = new Date();
       const lastSync = integration.last_sync_at ? new Date(integration.last_sync_at) : null;
-      const syncFrequency = integration.sync_frequency || 5;
+      const syncFrequency = integration.sync_frequency || 60;
       
       const shouldSync = !lastSync || 
         (now.getTime() - lastSync.getTime()) >= syncFrequency * 60 * 1000;
