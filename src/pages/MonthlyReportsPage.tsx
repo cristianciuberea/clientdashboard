@@ -386,8 +386,12 @@ export default function MonthlyReportsPage() {
 
         {/* Table */}
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-            <table className="min-w-full divide-y divide-slate-200">
+          <div className="relative">
+            <div className="text-xs text-slate-500 mb-2 px-4">
+              💡 Scroll orizontal pentru a vedea toate coloanele
+            </div>
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
+            <table className="min-w-[2000px] divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-20">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-30">
@@ -513,6 +517,7 @@ export default function MonthlyReportsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
