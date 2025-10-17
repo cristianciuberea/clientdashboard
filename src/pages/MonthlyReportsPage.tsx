@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
-import { Calendar, Download, Filter, RefreshCw } from 'lucide-react';
+import { Calendar, Download, Filter, RefreshCw, DollarSign, Target } from 'lucide-react';
 
 type Client = Database['public']['Tables']['clients']['Row'];
 
@@ -343,6 +343,55 @@ export default function MonthlyReportsPage() {
                 <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Syncing...' : 'Sync Data'}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600 mb-1">Total Cheltuit Facebook</p>
+                <p className="text-2xl font-bold text-red-800">
+                  {dailyMetrics.reduce((sum, day) => sum + day.fbAdSpend, 0).toFixed(2)} RON
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600 mb-1">Total Încasat WooCommerce</p>
+                <p className="text-2xl font-bold text-green-800">
+                  {dailyMetrics.reduce((sum, day) => sum + day.wcTotalRevenue, 0).toFixed(2)} RON
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600 mb-1">ROAS (Return on Ad Spend)</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  {(() => {
+                    const totalFbSpend = dailyMetrics.reduce((sum, day) => sum + day.fbAdSpend, 0);
+                    const totalWcRevenue = dailyMetrics.reduce((sum, day) => sum + day.wcTotalRevenue, 0);
+                    return totalFbSpend > 0 ? (totalWcRevenue / totalFbSpend).toFixed(2) : '0.00';
+                  })()}x
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                <Target className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           </div>
         </div>
