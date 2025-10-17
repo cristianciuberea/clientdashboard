@@ -453,7 +453,7 @@ export default function MonthlyReportsPage() {
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
             💡 Scroll orizontal pentru a vedea toate coloanele
           </div>
-          <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full" style={{ 
+          <div className="overflow-x-auto overflow-y-auto max-h-[70vh] w-full" style={{
             overflowX: 'auto',
             scrollbarWidth: 'thin',
             scrollbarColor: '#cbd5e1 #f1f5f9'
