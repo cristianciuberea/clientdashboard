@@ -77,6 +77,8 @@ export default function ReportsPage() {
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0, currentPeriod: '' });
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillProgress, setBackfillProgress] = useState({ current: 0, total: 0, currentPeriod: '' });
   // TODO: Implement sharing functionality
   // const [generatedLink, setGeneratedLink] = useState('');
   // const [activeLinks, setActiveLinks] = useState<any[]>([]);
@@ -776,6 +778,95 @@ export default function ReportsPage() {
     }
   };
 
+  const handleBackfillHistory = async () => {
+    if (!selectedClient || integrations.length === 0) {
+      alert('Please select a client and ensure integrations are loaded');
+      return;
+    }
+
+    setBackfilling(true);
+    setBackfillProgress({ current: 0, total: 0, currentPeriod: '' });
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+
+      // Define historical periods to backfill
+      const backfillPeriods = [
+        { range: 'yesterday' as const, label: 'Yesterday', dateFrom: undefined, dateTo: new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+        {
+          range: 'last_30_days' as const,
+          label: 'Last 30 Days',
+          dateFrom: thirtyDaysAgo.toISOString().split('T')[0],
+          dateTo: today.toISOString().split('T')[0]
+        },
+        {
+          range: 'this_month' as const,
+          label: 'This Month',
+          dateFrom: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0],
+          dateTo: today.toISOString().split('T')[0]
+        }
+      ];
+
+      const totalTasks = backfillPeriods.length * integrations.length;
+      setBackfillProgress({ current: 0, total: totalTasks, currentPeriod: backfillPeriods[0].label });
+
+      let completed = 0;
+
+      // Sync all historical periods sequentially with progress tracking
+      for (const period of backfillPeriods) {
+        setBackfillProgress({ current: completed, total: totalTasks, currentPeriod: period.label });
+        
+        for (const integration of integrations) {
+          const platformSlug = integration.platform.replace('_', '-');
+          const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-${platformSlug}`;
+
+          const payload = {
+            integration_id: integration.id,
+            client_id: integration.client_id,
+            date_to: period.dateTo,
+            ...(period.dateFrom && { date_from: period.dateFrom }),
+          };
+
+          console.log(`Backfilling ${integration.platform} for ${period.range}:`, payload);
+
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const result = await response.json();
+            console.error(`[${period.range}] Backfill failed:`, result);
+            throw new Error(`${integration.platform} ${period.range}: ${result.error || 'Backfill failed'}`);
+          }
+
+          completed++;
+          setBackfillProgress({ current: completed, total: totalTasks, currentPeriod: period.label });
+        }
+      }
+
+      alert(`Historical data backfilled successfully! (${backfillPeriods.length} periods × ${integrations.length} integrations)`);
+
+      if (selectedClient) {
+        fetchMetrics(selectedClient.id);
+      }
+    } catch (error: any) {
+      console.error('Error backfilling history:', error);
+      alert(`Backfill failed: ${error.message}`);
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
   useEffect(() => {
     fetchClients();
   }, []);
@@ -857,12 +948,23 @@ export default function ReportsPage() {
 
             <button
               onClick={handleSyncAll}
-              disabled={syncing || !selectedClient || integrations.length === 0}
+              disabled={syncing || backfilling || !selectedClient || integrations.length === 0}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md transition text-xs font-medium disabled:bg-slate-300 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
               <span>
-                {syncing ? 'Syncing...' : 'Sync All'}
+                {syncing ? 'Syncing...' : 'Sync Today'}
+              </span>
+            </button>
+
+            <button
+              onClick={handleBackfillHistory}
+              disabled={syncing || backfilling || !selectedClient || integrations.length === 0}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition text-xs font-medium disabled:bg-slate-300 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <Calendar className={`w-3.5 h-3.5 ${backfilling ? 'animate-pulse' : ''}`} />
+              <span>
+                {backfilling ? 'Backfilling...' : 'Backfill History'}
               </span>
             </button>
 
@@ -979,6 +1081,28 @@ export default function ReportsPage() {
               <div
                 className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {backfilling && backfillProgress.total > 0 && (
+          <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800">Backfilling: {backfillProgress.currentPeriod}</h3>
+                <p className="text-xs text-slate-600">
+                  {backfillProgress.current} / {backfillProgress.total} tasks completed
+                </p>
+              </div>
+              <span className="text-sm font-bold text-blue-600">
+                {Math.round((backfillProgress.current / backfillProgress.total) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${(backfillProgress.current / backfillProgress.total) * 100}%` }}
               />
             </div>
           </div>
