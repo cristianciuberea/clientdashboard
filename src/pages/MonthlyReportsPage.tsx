@@ -492,7 +492,15 @@ export default function MonthlyReportsPage() {
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
             💡 Scroll orizontal pentru a vedea toate coloanele (glisează cu mouse-ul sau touchpad-ul)
           </div>
-          <div className="monthly-reports-table-container overflow-x-scroll">
+          <div 
+            className="overflow-x-auto max-h-[70vh] overflow-y-auto"
+            onScroll={(e) => {
+              const stickyScroll = document.querySelector('.monthly-reports-table-container');
+              if (stickyScroll) {
+                stickyScroll.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
+          >
             <table className="min-w-[2500px] divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-20">
                 <tr>
@@ -625,6 +633,19 @@ export default function MonthlyReportsPage() {
               📊 Total: {dailyMetrics.length} zile cu date
             </div>
           </div>
+        </div>
+
+        {/* Sticky Horizontal Scroll */}
+        <div 
+          className="monthly-reports-table-container"
+          onScroll={(e) => {
+            const tableContainer = document.querySelector('.overflow-x-auto');
+            if (tableContainer) {
+              tableContainer.scrollLeft = e.currentTarget.scrollLeft;
+            }
+          }}
+        >
+          <div className="min-w-[2500px] h-4 bg-slate-100"></div>
         </div>
 
         {dailyMetrics.length === 0 && (

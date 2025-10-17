@@ -44,6 +44,12 @@
   overflow-x: scroll !important;
   scrollbar-width: auto !important;
   scrollbar-color: #3b82f6 #e5e7eb !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 50 !important;
+  background: white !important;
+  border-top: 2px solid #e5e7eb !important;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .monthly-reports-table-container::-webkit-scrollbar {
