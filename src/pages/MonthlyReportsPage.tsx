@@ -98,6 +98,12 @@ export default function MonthlyReportsPage() {
         wcCount: wcSnapshots?.length || 0 
       });
 
+      // Debug: Log first few Facebook snapshots
+      if (fbSnapshots && fbSnapshots.length > 0) {
+        console.log('First Facebook snapshot:', fbSnapshots[0]);
+        console.log('Facebook snapshot metrics:', fbSnapshots[0].metrics);
+      }
+
       // Process snapshots by date
       const dailyData: { [date: string]: DailyMetrics } = {};
 
@@ -180,13 +186,17 @@ export default function MonthlyReportsPage() {
       Object.values(dailyData).forEach(day => {
         if (day.fbAdSpend > 0) {
           day.fbRoas = day.wcTotalRevenue / day.fbAdSpend;
-          day.fbRevenue = day.wcTotalRevenue; // Assuming all revenue comes from Facebook
+          day.fbRevenue = day.wcTotalRevenue; // Facebook revenue = WooCommerce revenue (conversions from Facebook)
         }
       });
 
       const sortedMetrics = Object.values(dailyData).sort((a, b) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
+
+      // Debug: Log first few processed days
+      console.log('First processed day:', sortedMetrics[0]);
+      console.log('Days with Facebook data:', sortedMetrics.filter(day => day.fbAdSpend > 0).length);
 
       setDailyMetrics(sortedMetrics);
     } catch (error) {
