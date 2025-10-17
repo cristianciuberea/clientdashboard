@@ -63,8 +63,10 @@ Deno.serve(async (req: Request) => {
       throw new Error('Missing Facebook credentials');
     }
 
-    const dateFrom = date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const dateTo = date_to || new Date().toISOString().split('T')[0];
+    // Only sync today's data, not historical data
+    const today = new Date().toISOString().split('T')[0];
+    const dateFrom = date_from || today;
+    const dateTo = date_to || today;
 
     console.log('Date range for Facebook sync:', { dateFrom, dateTo });
 
@@ -92,7 +94,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const metricsToInsert = [];
+    // Aggregate all days into a single snapshot (like WooCommerce)
+    let totalSpend = 0;
+    let totalImpressions = 0;
+    let totalClicks = 0;
+    let totalLinkClicks = 0;
+    let totalLandingPageViews = 0;
+    let totalConversions = 0;
+    let totalCtr = 0;
+    let totalCpc = 0;
+    let totalCpm = 0;
 
     for (const dayData of fbData.data) {
       // Extract conversions (purchases)
@@ -109,42 +120,60 @@ Deno.serve(async (req: Request) => {
       const lpViews = parseInt(landingPageViews);
       const conversionsNum = parseInt(conversions);
 
-      // Calculate metrics
-      const costPerLinkClick = linkClicks > 0 ? spend / linkClicks : 0;
-      const landingPageViewRate = linkClicks > 0 ? (lpViews / linkClicks) * 100 : 0;
-      const conversionRate = lpViews > 0 ? (conversionsNum / lpViews) * 100 : 0;
+      // Aggregate totals
+      totalSpend += spend;
+      totalImpressions += impressions;
+      totalClicks += clicks;
+      totalLinkClicks += linkClicks;
+      totalLandingPageViews += lpViews;
+      totalConversions += conversionsNum;
+      totalCtr += parseFloat(dayData.ctr || 0);
+      totalCpc += parseFloat(dayData.cpc || 0);
+      totalCpm += parseFloat(dayData.cpm || 0);
+    }
 
-      const metrics: FacebookAdsMetrics = {
-        spend,
-        impressions,
-        clicks, // Keep total clicks for reference
-        link_clicks: linkClicks,
-        landing_page_views: lpViews,
-        conversions: conversionsNum,
-        ctr: parseFloat(dayData.ctr || 0),
-        cpc: parseFloat(dayData.cpc || 0), // Original CPC from Facebook
-        cpm: parseFloat(dayData.cpm || 0),
-        cost_per_link_click: costPerLinkClick,
-        landing_page_view_rate: landingPageViewRate,
-        conversion_rate: conversionRate,
-      };
+    // Calculate averages
+    const daysCount = fbData.data.length;
+    const avgCtr = daysCount > 0 ? totalCtr / daysCount : 0;
+    const avgCpc = daysCount > 0 ? totalCpc / daysCount : 0;
+    const avgCpm = daysCount > 0 ? totalCpm / daysCount : 0;
 
-      metricsToInsert.push({
+    // Calculate derived metrics
+    const costPerLinkClick = totalLinkClicks > 0 ? totalSpend / totalLinkClicks : 0;
+    const landingPageViewRate = totalLinkClicks > 0 ? (totalLandingPageViews / totalLinkClicks) * 100 : 0;
+    const conversionRate = totalLandingPageViews > 0 ? (totalConversions / totalLandingPageViews) * 100 : 0;
+
+    const metrics: FacebookAdsMetrics = {
+      spend: totalSpend,
+      impressions: totalImpressions,
+      clicks: totalClicks,
+      link_clicks: totalLinkClicks,
+      landing_page_views: totalLandingPageViews,
+      conversions: totalConversions,
+      ctr: avgCtr,
+      cpc: avgCpc,
+      cpm: avgCpm,
+      cost_per_link_click: costPerLinkClick,
+      landing_page_view_rate: landingPageViewRate,
+      conversion_rate: conversionRate,
+    };
+
+    // Use upsert to update existing snapshot or create new one
+    const { error: upsertError } = await supabaseClient
+      .from('metrics_snapshots')
+      .upsert({
         client_id,
         integration_id,
         platform: 'facebook_ads',
         metric_type: 'facebook_ads',
-        date: dayData.date_start,
+        date: dateTo, // Single date for the period
         metrics: metrics,
+      }, {
+        onConflict: 'client_id,integration_id,platform,metric_type,date'
       });
-    }
 
-    const { error: insertError } = await supabaseClient
-      .from('metrics_snapshots')
-      .insert(metricsToInsert);
-
-    if (insertError) {
-      throw insertError;
+    if (upsertError) {
+      throw upsertError;
     }
 
     const { error: updateError } = await supabaseClient
@@ -157,7 +186,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, days_synced: metricsToInsert.length }),
+      JSON.stringify({ success: true, metrics }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
