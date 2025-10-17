@@ -690,8 +690,7 @@ export default function ReportsPage() {
       const { data, error } = await supabase
         .from('integrations')
         .select('*')
-        .eq('client_id', clientId)
-        .eq('status', 'active');
+        .eq('client_id', clientId);
 
       if (error) throw error;
       console.log('Found integrations for client', clientId, ':', JSON.stringify(data, null, 2));
