@@ -796,19 +796,20 @@ export default function ReportsPage() {
       thirtyDaysAgo.setDate(today.getDate() - 30);
 
       // Define historical periods to backfill
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
       const backfillPeriods = [
-        { range: 'yesterday' as const, label: 'Yesterday', dateFrom: undefined, dateTo: new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+        { range: 'yesterday' as const, label: 'Yesterday', dateFrom: yesterday.toISOString().split('T')[0], dateTo: yesterday.toISOString().split('T')[0] },
         {
           range: 'last_30_days' as const,
           label: 'Last 30 Days',
           dateFrom: thirtyDaysAgo.toISOString().split('T')[0],
-          dateTo: today.toISOString().split('T')[0]
+          dateTo: yesterday.toISOString().split('T')[0] // Don't include today in historical data
         },
         {
           range: 'this_month' as const,
           label: 'This Month',
           dateFrom: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0],
-          dateTo: today.toISOString().split('T')[0]
+          dateTo: yesterday.toISOString().split('T')[0] // Don't include today in historical data
         }
       ];
 
