@@ -434,11 +434,15 @@ export default function MonthlyReportsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border border-slate-200 mb-6">
+        <div className="bg-white rounded-lg border border-slate-200 mb-8">
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
-            💡 Scroll orizontal pentru a vedea toate coloanele (glisează cu mouse-ul sau touchpad-ul)
+            💡 Scroll orizontal pentru a vedea toate coloanele
           </div>
-          <div className="overflow-x-scroll overflow-y-auto max-h-[600px] w-full" style={{ overflowX: 'scroll' }}>
+          <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full" style={{ 
+            overflowX: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#cbd5e1 #f1f5f9'
+          }}>
             <table className="min-w-[2500px] divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-20">
                 <tr>
@@ -572,6 +576,9 @@ export default function MonthlyReportsPage() {
             </div>
           </div>
         </div>
+        
+        {/* Bottom padding for better scroll visibility */}
+        <div className="h-16 bg-slate-50"></div>
 
         {dailyMetrics.length === 0 && (
           <div className="text-center py-12">
@@ -582,10 +589,10 @@ export default function MonthlyReportsPage() {
             </p>
           </div>
         )}
-        
-        {/* Bottom padding for better scroll visibility */}
-        <div className="h-12"></div>
       </div>
+      
+      {/* Bottom padding for better scroll visibility */}
+      <div className="h-16 bg-slate-50"></div>
     </div>
   );
 }
