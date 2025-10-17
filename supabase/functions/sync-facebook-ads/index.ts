@@ -53,6 +53,12 @@ Deno.serve(async (req: Request) => {
     const accessToken = credentials.access_token;
     const adAccountId = credentials.ad_account_id;
 
+    console.log('Facebook credentials check:', {
+      hasAccessToken: !!accessToken,
+      hasAdAccountId: !!adAccountId,
+      adAccountId: adAccountId
+    });
+
     if (!accessToken || !adAccountId) {
       throw new Error('Missing Facebook credentials');
     }
@@ -60,19 +66,24 @@ Deno.serve(async (req: Request) => {
     const dateFrom = date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const dateTo = date_to || new Date().toISOString().split('T')[0];
 
+    console.log('Date range for Facebook sync:', { dateFrom, dateTo });
+
     // Request detailed fields including link clicks and landing page views
     const fields = 'spend,impressions,clicks,inline_link_clicks,actions,ctr,cpc,cpm';
     const timeRange = JSON.stringify({ since: dateFrom, until: dateTo });
     const fbApiUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=${fields}&time_range=${timeRange}&time_increment=1&access_token=${accessToken}`;
 
+    console.log('Facebook API URL:', fbApiUrl);
     const fbResponse = await fetch(fbApiUrl);
 
     if (!fbResponse.ok) {
       const errorText = await fbResponse.text();
+      console.error('Facebook API error:', errorText);
       throw new Error(`Facebook API error: ${errorText}`);
     }
 
     const fbData = await fbResponse.json();
+    console.log('Facebook API response:', JSON.stringify(fbData, null, 2));
 
     if (!fbData.data || fbData.data.length === 0) {
       return new Response(
