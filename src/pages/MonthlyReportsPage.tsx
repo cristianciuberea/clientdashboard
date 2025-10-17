@@ -379,7 +379,16 @@ export default function MonthlyReportsPage() {
               <div>
                 <p className="text-sm font-medium text-red-600 mb-1">Total Cheltuit Facebook</p>
                 <p className="text-2xl font-bold text-red-800">
-                  {dailyMetrics.reduce((sum, day) => sum + day.fbAdSpend, 0).toFixed(2)} RON
+                  {(() => {
+                    const total = dailyMetrics.reduce((sum, day) => sum + day.fbAdSpend, 0);
+                    console.log('Total Facebook spend calculation:', {
+                      totalDays: dailyMetrics.length,
+                      daysWithData: dailyMetrics.filter(day => day.fbAdSpend > 0).length,
+                      totalSpend: total,
+                      dailySpends: dailyMetrics.filter(day => day.fbAdSpend > 0).map(day => ({ date: day.date, spend: day.fbAdSpend }))
+                    });
+                    return total.toFixed(2);
+                  })()} RON
                 </p>
               </div>
               <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">
