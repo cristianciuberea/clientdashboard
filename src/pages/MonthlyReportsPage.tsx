@@ -488,10 +488,7 @@ export default function MonthlyReportsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border border-slate-200 mb-8 overflow-x-auto" style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#cbd5e1 #f1f5f9'
-        }}>
+        <div className="bg-white rounded-lg border border-slate-200 mb-8 monthly-reports-table-container">
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
             💡 Scroll orizontal pentru a vedea toate coloanele (glisează cu mouse-ul sau touchpad-ul)
           </div>

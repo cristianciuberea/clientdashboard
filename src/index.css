@@ -38,3 +38,10 @@
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Force horizontal scroll for Monthly Reports table */
+.monthly-reports-table-container {
+  overflow-x: scroll !important;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
