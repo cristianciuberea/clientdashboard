@@ -492,65 +492,65 @@ export default function MonthlyReportsPage() {
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
             💡 Scroll orizontal pentru a vedea toate coloanele (glisează cu mouse-ul sau touchpad-ul)
           </div>
-          <div className="monthly-reports-table-container overflow-x-scroll overflow-y-visible">
+          <div className="monthly-reports-table-container overflow-x-scroll overflow-y-auto max-h-[80vh]">
             <table className="min-w-[2500px] divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-20">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-30">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-30">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Ad Spend
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Revenue
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB ROAS
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB CPM
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Impressions
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Link Clicks
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB LP Views
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB LP Rate
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Conversions
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Conv Rate
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB CTR
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB Cost/Link
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     FB CPC Total
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     WC Orders
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Codul Destinului
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Codul Destinului 2
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     INFLUENȚA DECADEI
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     WC Revenue
                   </th>
                 </tr>
@@ -558,61 +558,61 @@ export default function MonthlyReportsPage() {
               <tbody className="bg-white divide-y divide-slate-200">
                 {dailyMetrics.map((day) => (
                   <tr key={day.date} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 sticky left-0 bg-white z-30">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-slate-900 sticky left-0 bg-white z-30">
                       {new Date(day.date).toLocaleDateString('ro-RO')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbAdSpend.toFixed(2)} RON
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbRevenue.toFixed(2)} RON
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbRoas.toFixed(2)}x
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbCpm.toFixed(2)} RON
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbImpressions.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbLinkClicks.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbLandingPageViews.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbLpViewRate.toFixed(2)}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbConversions}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbConversionRate.toFixed(2)}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbCtr.toFixed(2)}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbCostPerLinkClick.toFixed(2)} RON
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.fbCpcTotal.toFixed(2)} RON
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.wcTotalOrders}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.wcCodulDestinuluiOrders}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.wcCodulDestinului2Orders}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.wcInfluentaDecadeiOrders}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900">
                       {day.wcTotalRevenue.toFixed(2)} RON
                     </td>
                   </tr>
