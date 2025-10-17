@@ -43,25 +43,30 @@
 .monthly-reports-table-container {
   overflow-x: scroll !important;
   overflow-y: auto !important;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
+  scrollbar-width: auto !important;
+  scrollbar-color: #3b82f6 #e5e7eb !important;
 }
 
 .monthly-reports-table-container::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+  height: 12px !important;
+  width: 12px !important;
 }
 
 .monthly-reports-table-container::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
+  background: #e5e7eb !important;
+  border-radius: 6px !important;
 }
 
 .monthly-reports-table-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #3b82f6 !important;
+  border-radius: 6px !important;
+  border: 2px solid #e5e7eb !important;
 }
 
 .monthly-reports-table-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #2563eb !important;
+}
+
+.monthly-reports-table-container::-webkit-scrollbar-corner {
+  background: #e5e7eb !important;
 }
