@@ -217,21 +217,38 @@ export default function MonthlyReportsPage() {
         .eq('status', 'active');
 
       if (integrations) {
+        console.log('Found integrations:', integrations.map(i => ({ platform: i.platform, status: i.status, id: i.id })));
+        
         for (const integration of integrations) {
           const functionName = `sync-${integration.platform}`;
+          const dateFrom = `${selectedMonth}-01`;
+          const dateTo = new Date(new Date(`${selectedMonth}-01`).getFullYear(), new Date(`${selectedMonth}-01`).getMonth() + 1, 0).toISOString().split('T')[0];
+          
+          console.log(`Syncing ${integration.platform} for ${selectedClient.name}:`, {
+            functionName,
+            integrationId: integration.id,
+            clientId: selectedClient.id,
+            dateFrom,
+            dateTo
+          });
+          
           const response = await fetch(`/api/functions/v1/${functionName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               integration_id: integration.id,
               client_id: selectedClient.id,
-              date_from: `${selectedMonth}-01`,
-              date_to: new Date(new Date(`${selectedMonth}-01`).getFullYear(), new Date(`${selectedMonth}-01`).getMonth() + 1, 0).toISOString().split('T')[0]
+              date_from: dateFrom,
+              date_to: dateTo
             })
           });
           
           if (!response.ok) {
-            console.error(`Sync failed for ${integration.platform}:`, await response.text());
+            const errorText = await response.text();
+            console.error(`Sync failed for ${integration.platform}:`, errorText);
+          } else {
+            const result = await response.json();
+            console.log(`Sync successful for ${integration.platform}:`, result);
           }
         }
       }
