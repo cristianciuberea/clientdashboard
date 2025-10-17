@@ -434,7 +434,7 @@ export default function MonthlyReportsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border border-slate-200">
+        <div className="bg-white rounded-lg border border-slate-200 mb-6">
           <div className="text-xs text-slate-500 mb-2 px-4 pt-4">
             💡 Scroll orizontal pentru a vedea toate coloanele
           </div>
@@ -582,10 +582,10 @@ export default function MonthlyReportsPage() {
             </p>
           </div>
         )}
+        
+        {/* Bottom padding for better scroll visibility */}
+        <div className="h-12"></div>
       </div>
-      
-      {/* Bottom padding for better scroll visibility */}
-      <div className="h-8"></div>
     </div>
   );
 }
