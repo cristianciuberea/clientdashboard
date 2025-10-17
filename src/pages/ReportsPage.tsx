@@ -607,7 +607,8 @@ export default function ReportsPage() {
           clicks: data.clicks
         })));
 
-        const facebookAds = fbDataCount > 0 ? {
+        // Always show Facebook Ads table, even with 0 values
+        const facebookAds = {
           spend: fbSpend,
           impressions: fbImpressions,
           clicks: fbClicks,
@@ -621,7 +622,7 @@ export default function ReportsPage() {
           landing_page_view_rate: landingPageViewRate,
           conversion_rate: conversionRate,
           roas: fbSpend > 0 ? aggregatedRevenue / fbSpend : 0,
-        } : undefined;
+        };
 
         setMetrics({
           totalRevenue: aggregatedRevenue,
