@@ -126,6 +126,8 @@ export default function ClientDashboard({ clientId, onBack }: ClientDashboardPro
         .select('*')
         .eq('client_id', clientId)
         .gte('date', startDate.toISOString().split('T')[0])
+        .neq('metric_type', 'ecommerce_aggregate')
+        .neq('metric_type', 'facebook_ads_aggregate')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
