@@ -11,6 +11,7 @@ import UserManagementPage from './pages/UserManagementPage';
 import GoalsDashboard from './pages/GoalsDashboard';
 import AgencyFinancePage from './pages/AgencyFinancePage';
 import MonthlyReportsPage from './pages/MonthlyReportsPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import Sidebar from './components/Sidebar';
 import BackfillBanner from './components/BackfillBanner';
 
@@ -100,6 +101,8 @@ function AppContent() {
         return isSuperAdmin ? <UserManagementPage /> : <ClientDashboard />;
       case 'settings':
         return <IntegrationsPage />;
+      case 'change-password':
+        return <ChangePasswordPage onBack={() => setActiveView('dashboard')} />;
       default:
         return isSuperAdmin ? <AgencyDashboard /> : <ClientDashboard />;
     }

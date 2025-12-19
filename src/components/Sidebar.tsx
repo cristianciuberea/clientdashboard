@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog, Target, DollarSign, Calendar } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog, Target, DollarSign, Calendar, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -104,13 +104,22 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
             <p className="text-xs text-slate-500 truncate">{profile?.email}</p>
           </div>
         </div>
-        <button
-          onClick={signOut}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Sign Out</span>
-        </button>
+        <div className="space-y-1">
+          <button
+            onClick={() => onViewChange('change-password')}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition"
+          >
+            <Lock className="w-5 h-5" />
+            <span className="font-medium">Change Password</span>
+          </button>
+          <button
+            onClick={signOut}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
+        </div>
       </div>
     </div>
   );
