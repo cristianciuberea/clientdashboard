@@ -67,6 +67,8 @@ Deno.serve(async (req: Request) => {
     const headers = {
       'Authorization': `Basic ${auth}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'WooCommerce-API-Client/1.0',
+      'Accept': 'application/json',
     };
 
     const startDateTime = isRangeQuery ? `${date_from}T00:00:00` : `${snapshotDate}T00:00:00`;
