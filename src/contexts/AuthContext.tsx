@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setProfile(null);
         }
+        setLoading(false);
       })();
     });
 
