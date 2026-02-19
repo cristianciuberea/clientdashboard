@@ -1,6 +1,6 @@
 import { LayoutDashboard, Users, Settings, Bell, FileText, LogOut, UserCog, Target, DollarSign, Calendar, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
@@ -16,15 +16,8 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const isManager = profile?.role === 'manager';
   const isClient = profile?.role === 'client';
 
-  useEffect(() => {
-    fetchUnreadAlerts();
-
-    const interval = setInterval(fetchUnreadAlerts, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchUnreadAlerts = async () => {
+  const fetchUnreadAlerts = useCallback(async () => {
+    if (document.hidden) return;
     try {
       const { count, error } = await supabase
         .from('alerts')
@@ -36,9 +29,25 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
     } catch (error) {
       console.error('Error fetching unread alerts:', error);
     }
-  };
+  }, []);
 
-  const menuItems = [
+  useEffect(() => {
+    fetchUnreadAlerts();
+
+    const interval = setInterval(fetchUnreadAlerts, 30000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchUnreadAlerts();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchUnreadAlerts]);
+
+  const menuItems = useMemo(() => [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     ...(isSuperAdmin ? [{ id: 'clients', label: 'Clients', icon: Users }] : []),
     { id: 'goals', label: 'Goals', icon: Target },
@@ -48,7 +57,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
     { id: 'alerts', label: 'Alerts', icon: Bell },
     ...(isSuperAdmin ? [{ id: 'users', label: 'User Management', icon: UserCog }] : []),
     ...(!isClient ? [{ id: 'settings', label: 'Settings', icon: Settings }] : []),
-  ];
+  ], [isSuperAdmin, isManager, isClient]);
 
   return (
     <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen">

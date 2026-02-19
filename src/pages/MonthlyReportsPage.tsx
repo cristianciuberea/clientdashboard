@@ -67,62 +67,28 @@ export default function MonthlyReportsPage() {
       const endDate = new Date(new Date(startDate).getFullYear(), new Date(startDate).getMonth() + 1, 0)
         .toISOString().split('T')[0];
 
-      console.log('Fetching daily metrics for:', { clientId, startDate, endDate });
-
-      // Fetch Facebook snapshots
-      const { data: fbSnapshots, error: fbError } = await supabase
-        .from('metrics_snapshots')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('platform', 'facebook_ads')
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: true });
+      // Fetch Facebook and WooCommerce snapshots in parallel
+      const [{ data: fbSnapshots, error: fbError }, { data: wcSnapshots, error: wcError }] = await Promise.all([
+        supabase
+          .from('metrics_snapshots')
+          .select('*')
+          .eq('client_id', clientId)
+          .eq('platform', 'facebook_ads')
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date', { ascending: true }),
+        supabase
+          .from('metrics_snapshots')
+          .select('*')
+          .eq('client_id', clientId)
+          .eq('platform', 'woocommerce')
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date', { ascending: true }),
+      ]);
 
       if (fbError) throw fbError;
-
-      // Fetch WooCommerce snapshots
-      const { data: wcSnapshots, error: wcError } = await supabase
-        .from('metrics_snapshots')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('platform', 'woocommerce')
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: true });
-
       if (wcError) throw wcError;
-
-      console.log('Snapshots fetched:', { 
-        fbCount: fbSnapshots?.length || 0, 
-        wcCount: wcSnapshots?.length || 0 
-      });
-
-      // Debug: Log first few Facebook snapshots
-      if (fbSnapshots && fbSnapshots.length > 0) {
-        console.log('First Facebook snapshot:', fbSnapshots[0]);
-        console.log('Facebook snapshot metrics:', fbSnapshots[0].metrics);
-        
-        // Log all Facebook snapshots with dates
-        console.log('All Facebook snapshots dates:', fbSnapshots.map(s => ({ date: s.date, spend: s.metrics?.spend || 0 })));
-        
-        // Group by date to see which days have data
-        const datesWithData = fbSnapshots.reduce((acc, snapshot) => {
-          const date = snapshot.date;
-          if (!acc[date]) acc[date] = [];
-          acc[date].push(snapshot.metrics?.spend || 0);
-          return acc;
-        }, {});
-        
-        const facebookDataByDate = Object.keys(datesWithData).sort().map(date => ({
-          date,
-          totalSpend: datesWithData[date].reduce((sum, spend) => sum + spend, 0)
-        }));
-        console.log('Facebook data by date:', JSON.stringify(facebookDataByDate, null, 2));
-        
-        // Also log the first few dates to see what we have
-        console.log('First 10 Facebook dates:', JSON.stringify(facebookDataByDate.slice(0, 10), null, 2));
-      }
 
       // Process snapshots by date
       const dailyData: { [date: string]: DailyMetrics } = {};
@@ -214,10 +180,6 @@ export default function MonthlyReportsPage() {
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
-      // Debug: Log first few processed days
-      console.log('First processed day:', sortedMetrics[0]);
-      console.log('Days with Facebook data:', sortedMetrics.filter(day => day.fbAdSpend > 0).length);
-
       setDailyMetrics(sortedMetrics);
     } catch (error) {
       console.error('Error fetching daily metrics:', error);
@@ -247,22 +209,12 @@ export default function MonthlyReportsPage() {
         .eq('status', 'active');
 
       if (integrations) {
-        console.log('Found integrations:', integrations.map(i => ({ platform: i.platform, status: i.status, id: i.id })));
-        
         for (const integration of integrations) {
           const functionName = `sync-${integration.platform}`;
           const dateFrom = `${selectedMonth}-01`;
           const dateTo = new Date(new Date(`${selectedMonth}-01`).getFullYear(), new Date(`${selectedMonth}-01`).getMonth() + 1, 0).toISOString().split('T')[0];
-          
-          console.log(`Syncing ${integration.platform} for ${selectedClient.name}:`, {
-            functionName,
-            integrationId: integration.id,
-            clientId: selectedClient.id,
-            dateFrom,
-            dateTo
-          });
-          
-          const response = await fetch(`/api/functions/v1/${functionName}`, {
+
+          await fetch(`/api/functions/v1/${functionName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -272,14 +224,6 @@ export default function MonthlyReportsPage() {
               date_to: dateTo
             })
           });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Sync failed for ${integration.platform}:`, errorText);
-          } else {
-            const result = await response.json();
-            console.log(`Sync successful for ${integration.platform}:`, result);
-          }
         }
       }
 
@@ -399,16 +343,7 @@ export default function MonthlyReportsPage() {
               <div>
                 <p className="text-sm font-medium text-red-600 mb-1">Total Cheltuit Facebook</p>
                 <p className="text-2xl font-bold text-red-800">
-                  {(() => {
-                    const total = dailyMetrics.reduce((sum, day) => sum + day.fbAdSpend, 0);
-                    console.log('Total Facebook spend calculation:', {
-                      totalDays: dailyMetrics.length,
-                      daysWithData: dailyMetrics.filter(day => day.fbAdSpend > 0).length,
-                      totalSpend: total,
-                      dailySpends: dailyMetrics.filter(day => day.fbAdSpend > 0).map(day => ({ date: day.date, spend: day.fbAdSpend }))
-                    });
-                    return total.toFixed(2);
-                  })()} RON
+                  {dailyMetrics.reduce((sum, day) => sum + day.fbAdSpend, 0).toFixed(2)} RON
                 </p>
               </div>
               <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">

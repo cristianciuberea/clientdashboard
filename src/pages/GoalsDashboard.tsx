@@ -125,26 +125,35 @@ export default function GoalsDashboard() {
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
 
+      // Batch fetch: find overall date range covering all goals
+      const minStartDate = goalsData.reduce((min, g) => g.start_date < min ? g.start_date : min, goalsData[0].start_date);
+      const maxEndDate = goalsData.reduce((max, g) => g.end_date > max ? g.end_date : max, goalsData[0].end_date);
+
+      const { data: allSnapshots } = await supabase
+        .from('metrics_snapshots')
+        .select('*')
+        .eq('client_id', clientId)
+        .gte('date', minStartDate)
+        .lte('date', maxEndDate)
+        .order('created_at', { ascending: false });
+
+      const snapshotPool = allSnapshots || [];
+
       const goalsWithProgress: GoalWithProgress[] = [];
 
       for (const goal of goalsData) {
         const startDate = new Date(goal.start_date);
         const endDate = new Date(goal.end_date);
-        
-        // Calculate current value based on metric type
+
         let currentValue = 0;
         let todayChange = 0;
         let facebookSpend = 0;
         let roas = 0;
 
-        // Fetch snapshots for the goal period ONLY (avoids Supabase 1000-row limit)
-        const { data: snapshots } = await supabase
-          .from('metrics_snapshots')
-          .select('*')
-          .eq('client_id', clientId)
-          .gte('date', goal.start_date)
-          .lte('date', goal.end_date)
-          .order('created_at', { ascending: false });
+        // Filter from in-memory pool instead of making DB call
+        const snapshots = snapshotPool.filter(
+          s => s.date >= goal.start_date && s.date <= goal.end_date
+        );
 
         if (snapshots && snapshots.length > 0) {
           // Group by date-platform to get latest snapshot per combination

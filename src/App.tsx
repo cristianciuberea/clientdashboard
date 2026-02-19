@@ -1,19 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
-import AgencyDashboard from './pages/AgencyDashboard';
-import ClientDashboard from './pages/ClientDashboard';
-import IntegrationsPage from './pages/IntegrationsPage';
-import ReportsPage from './pages/ReportsPage';
-import AlertsPage from './pages/AlertsPage';
-import SharedReportPage from './pages/SharedReportPage';
-import UserManagementPage from './pages/UserManagementPage';
-import GoalsDashboard from './pages/GoalsDashboard';
-import AgencyFinancePage from './pages/AgencyFinancePage';
-import MonthlyReportsPage from './pages/MonthlyReportsPage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
 import Sidebar from './components/Sidebar';
 import BackfillBanner from './components/BackfillBanner';
+
+const AgencyDashboard = lazy(() => import('./pages/AgencyDashboard'));
+const ClientDashboard = lazy(() => import('./pages/ClientDashboard'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const AlertsPage = lazy(() => import('./pages/AlertsPage'));
+const SharedReportPage = lazy(() => import('./pages/SharedReportPage'));
+const UserManagementPage = lazy(() => import('./pages/UserManagementPage'));
+const GoalsDashboard = lazy(() => import('./pages/GoalsDashboard'));
+const AgencyFinancePage = lazy(() => import('./pages/AgencyFinancePage'));
+const MonthlyReportsPage = lazy(() => import('./pages/MonthlyReportsPage'));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -69,17 +70,17 @@ function AppContent() {
 
   const isSuperAdmin = profile.role === 'super_admin';
 
-  const handleClientSelect = (clientId: string) => {
+  const handleClientSelect = useCallback((clientId: string) => {
     setSelectedClientId(clientId);
     setActiveView('client-details');
-  };
+  }, []);
 
-  const handleBackToAgency = () => {
+  const handleBackToAgency = useCallback(() => {
     setSelectedClientId(null);
     setActiveView('dashboard');
-  };
+  }, []);
 
-  const renderView = () => {
+  const renderView = useMemo(() => {
     switch (activeView) {
       case 'dashboard':
         return isSuperAdmin ? <AgencyDashboard onClientSelect={handleClientSelect} /> : <ClientDashboard />;
@@ -106,14 +107,22 @@ function AppContent() {
       default:
         return isSuperAdmin ? <AgencyDashboard /> : <ClientDashboard />;
     }
-  };
+  }, [activeView, isSuperAdmin, selectedClientId, handleClientSelect, handleBackToAgency]);
+
+  const pageLoader = (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
       <div className="flex-1 flex flex-col">
         <BackfillBanner />
-        {renderView()}
+        <Suspense fallback={pageLoader}>
+          {renderView}
+        </Suspense>
       </div>
     </div>
   );
