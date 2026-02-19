@@ -49,26 +49,8 @@ function AppContent() {
     };
   }, []);
 
-  if (sharedReportToken) {
-    return <SharedReportPage token={sharedReportToken} />;
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user || !profile) {
-    return <LoginPage />;
-  }
-
-  const isSuperAdmin = profile.role === 'super_admin';
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const isManager = profile?.role === 'manager';
 
   const handleClientSelect = useCallback((clientId: string) => {
     setSelectedClientId(clientId);
@@ -107,7 +89,26 @@ function AppContent() {
       default:
         return isSuperAdmin ? <AgencyDashboard /> : <ClientDashboard />;
     }
-  }, [activeView, isSuperAdmin, selectedClientId, handleClientSelect, handleBackToAgency]);
+  }, [activeView, isSuperAdmin, isManager, selectedClientId, handleClientSelect, handleBackToAgency]);
+
+  if (sharedReportToken) {
+    return <SharedReportPage token={sharedReportToken} />;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return <LoginPage />;
+  }
 
   const pageLoader = (
     <div className="flex-1 flex items-center justify-center">
